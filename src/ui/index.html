@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LanLink · 局域网端到端直传</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/vendor/fonts.css">
+  <link rel="stylesheet" href="/vendor/nes.min.css">
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <path d="M2 2h6v1H2zM2 3h1v4H2zM7 3h1v1H7zM2 6h6v1H2zM9 6h5v1H9zM9 7h1v4H9zM13 7h1v4h-1zM9 10h5v1H9zM3 8h4v1H3zM3 9h1v1H3zM6 9h1v1H6zM3 10h4v1H3z"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <strong>LanLink</strong>
+          <span>LAN P2P TRANSFER</span>
+        </div>
+      </div>
+
+      <nav class="nav" id="nav" aria-label="主导航">
+        <button class="nav-item active" data-view="devices" aria-label="设备">
+          <svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">
+            <path d="M1 1h5v4H1zM1 2h1v2H1zM5 2h1v2H5zM1 5h5v1H1zM6 6h5v4H6zM6 7h1v2H6zM10 7h1v2h-1zM6 10h5v1H6zM6 4h1v1H6zM7 3h1v1H7z"/>
+          </svg>
+          <span>设备</span><em id="nav-devices-count"></em>
+        </button>
+        <button class="nav-item" data-view="transfers" aria-label="传输">
+          <svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">
+            <path d="M1 3h8v1H1zM6 1h1v1H6zM7 2h1v1H7zM8 3h1v1H8zM8 4h1v1H8zM7 5h1v1H7zM6 6h1v1H6zM10 8H2v1h8zM3 7h1v1H3zM4 6h1v1H4zM1 8h1v1H1z"/>
+          </svg>
+          <span>传输</span><em id="nav-transfers-count"></em>
+        </button>
+        <button class="nav-item" data-view="history" aria-label="历史">
+          <svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">
+            <path d="M5 1h2v1H5zM4 2h1v1H4zM7 2h1v1H7zM3 3h1v1H3zM8 3h1v1H8zM2 4h1v4H2zM9 4h1v4H9zM3 8h1v1H3zM8 8h1v1H8zM4 9h1v1H4zM7 9h1v1H7zM5 10h2v1H5zM5 3h1v4H5zM6 6h3v1H6z"/>
+          </svg>
+          <span>历史</span>
+        </button>
+        <button class="nav-item" data-view="settings" aria-label="设置">
+          <svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">
+            <path d="M5 1h2v1H5zM5 2h2v2H5zM3 3h2v1H3zM7 3h2v1H7zM2 5h1v2H2zM9 5h1v2H9zM3 8h2v1H3zM7 8h2v1H7zM5 8h2v2H5zM4 4h4v4H4zM5 5h2v2H5z"/>
+          </svg>
+          <span>设置</span>
+        </button>
+      </nav>
+
+      <div class="top-actions">
+        <div class="theme-switch" role="group" aria-label="配色主题">
+          <button class="theme-opt active" data-theme-opt="light" aria-pressed="true">亮</button>
+          <button class="theme-opt" data-theme-opt="dark" aria-pressed="false">暗</button>
+        </div>
+        <div class="status-pill" id="status-pill">
+          <span class="dot"></span><span id="listen-status">正在启动…</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="page-head">
+        <h1 id="view-title">设备</h1>
+        <p id="view-sub">在同一局域网内发现设备并直接发送文件</p>
+      </div>
+
+      <section class="view active" id="view-devices">
+        <div class="devices-grid">
+          <div class="devices-main stack">
+            <section class="hero">
+              <div class="hero-copy">
+                <h2>把文件直接送到另一台电脑</h2>
+                <p class="hero-lead">设备之间直接建立加密通道，支持断点续传与分块校验。</p>
+                <div class="hero-meta">
+                  <span><b id="hero-device-count">0</b> 台可见</span>
+                  <span><b id="hero-tcp-port">—</b> 端口</span>
+                  <span><b>0</b> 云端依赖</span>
+                </div>
+              </div>
+              <div class="hero-actions">
+                <button class="nes-btn" id="manual-connect-btn">手动连接 IP</button>
+                <button class="nes-btn is-primary" id="quick-send-btn">发送文件</button>
+              </div>
+            </section>
+
+            <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="拖入文件或点击选择文件">
+              <div class="drop-icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+                  <path d="M7 2h2v1H7zM6 3h1v1H6zM9 3h1v1H9zM5 4h1v1H5zM10 4h1v1h-1zM4 5h1v1H4zM11 5h1v1h-1zM7 5h2v7H7zM3 12h10v1H3zM4 11h1v1H4zM11 11h1v1h-1z"/>
+                </svg>
+              </div>
+              <div class="drop-copy">
+                <strong>拖入文件或文件夹</strong>
+                <span>松开后选择接收设备，也可以点击这里</span>
+              </div>
+              <span class="tag info">DROP</span>
+            </div>
+
+            <section class="panel devices-panel">
+              <div class="panel-head">
+                <h3 class="panel-title">附近的设备</h3>
+                <div class="section-tools">
+                  <span class="muted" id="peers-count">搜索中…</span>
+                  <button class="nes-btn" id="refresh-peers">刷新</button>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div class="peer-grid" id="peer-grid"></div>
+                <div class="empty" id="peer-empty">
+                  <div class="empty-art" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+                      <path d="M5 4h6v1H5zM4 5h1v1H4zM11 5h1v1h-1zM3 6h1v4H3zM12 6h1v4h-1zM4 10h1v1H4zM11 10h1v1h-1zM5 11h6v1H5zM12 11h2v1h-2zM13 12h1v2h-1zM7 7h2v2H7z"/>
+                    </svg>
+                  </div>
+                  <strong>正在搜索局域网设备</strong>
+                  <span>请确保另一台电脑也打开了 LanLink，并处于同一网段。</span>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <aside class="devices-side stack">
+            <section class="panel me-panel">
+              <div class="panel-head">
+                <h3 class="panel-title">本机</h3>
+                <span class="tag ok">在线</span>
+              </div>
+              <div class="panel-body">
+                <div class="me-card">
+                  <div class="avatar" id="me-avatar">L</div>
+                  <div class="me-meta">
+                    <strong id="me-name">本机</strong>
+                    <span id="me-id">正在初始化…</span>
+                  </div>
+                  <button class="nes-btn" id="copy-fp" title="复制设备指纹">复制</button>
+                </div>
+                <div class="kv"><span>接收端口</span><code id="me-port">—</code></div>
+                <div class="kv"><span>设备指纹</span><code id="me-fingerprint">—</code></div>
+              </div>
+            </section>
+
+            <section class="panel guest-panel" id="guest-panel">
+              <div class="panel-head">
+                <h3 class="panel-title">访客网页上传</h3>
+                <span class="guest-state" id="guest-state">未开启</span>
+              </div>
+              <div class="panel-body">
+                <p class="guest-desc" id="guest-desc">对方无需安装 LanLink，用浏览器打开链接并输入访问码即可把文件上传到本机。</p>
+                <div class="guest-cred" id="guest-cred" hidden>
+                  <code class="guest-url" id="guest-url">—</code>
+                  <div class="btn-row">
+                    <button class="nes-btn" data-action="guest-copy-link">复制链接</button>
+                    <button class="nes-btn" data-action="guest-open">打开</button>
+                  </div>
+                  <div class="guest-code-row">
+                    <span class="muted">访问码</span>
+                    <b id="guest-code">------</b>
+                    <button class="nes-btn" data-action="guest-copy-code">复制</button>
+                  </div>
+                  <div class="guest-expiry faint" id="guest-expiry"></div>
+                </div>
+                <div class="guest-actions">
+                  <button class="nes-btn is-primary" id="guest-toggle-btn" data-action="guest-toggle">开启访客上传</button>
+                  <button class="nes-btn" id="guest-rotate-btn" data-action="guest-rotate" hidden>更新链接</button>
+                </div>
+              </div>
+            </section>
+
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="view-transfers">
+        <div class="transfer-summary" id="transfer-summary"></div>
+        <div class="transfer-list" id="transfer-list"></div>
+        <div class="empty" id="transfer-empty">
+          <div class="empty-art" aria-hidden="true">
+            <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+              <path d="M2 3h11v1H2zM2 4h1v8H2zM13 4h1v8h-1zM2 12h11v1H2zM5 6h6v1H5zM6 7h4v1H6zM7 8h2v1H7zM7 9h2v1H7z"/>
+            </svg>
+          </div>
+          <strong>暂无进行中的传输</strong>
+          <span>在“设备”页选择一台设备开始发送。</span>
+        </div>
+      </section>
+
+      <section class="view" id="view-history">
+        <section class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">最近传输</h3>
+            <div class="section-tools">
+              <span class="muted" id="history-count"></span>
+              <button class="nes-btn" id="history-clear" hidden>清空记录</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="history-list" id="history-list"></div>
+            <div class="empty" id="history-empty">
+              <div class="empty-art" aria-hidden="true">
+                <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+                  <path d="M7 2h2v1H7zM6 3h1v1H6zM9 3h1v1H9zM4 4h1v1H4zM11 4h1v1h-1zM3 5h1v6H3zM12 5h1v6h-1zM4 11h1v1H4zM11 11h1v1h-1zM6 12h1v1H6zM9 12h1v1H9zM7 13h2v1H7zM7 5h1v4H7zM8 8h3v1H8z"/>
+                </svg>
+              </div>
+              <strong>还没有传输记录</strong>
+              <span>完成或取消的传输会出现在这里。</span>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="view-settings">
+        <div class="settings-grid">
+          <div class="settings-col">
+          <section class="panel settings-card">
+            <div class="panel-head"><h3 class="panel-title">本机信息</h3></div>
+            <div class="panel-body">
+              <label class="field"><span>设备名称</span><input class="nes-input" id="set-name" maxlength="64" autocomplete="off"></label>
+              <div class="fingerprint-box">
+                <span class="faint">设备指纹（用于核对身份）</span>
+                <code id="set-fingerprint"></code>
+              </div>
+              <div class="kv"><span>本机地址</span><code id="set-address">—</code></div>
+              <div class="kv"><span>程序数据</span><code id="set-data-dir"></code></div>
+              <button class="nes-btn" id="open-data-dir">打开数据目录</button>
+            </div>
+          </section>
+
+          <section class="panel settings-card">
+            <div class="panel-head"><h3 class="panel-title">访客上传</h3></div>
+            <div class="panel-body">
+              <p class="hint">没有安装 LanLink 的设备可以用浏览器打开链接，输入访问码后上传文件。链接使用随机令牌，仅建议在可信局域网内开启。</p>
+              <label class="switch-row">
+                <div><strong>开启访客网页上传</strong><span>关闭后端口停止监听，已打开的访客页面立即失效</span></div>
+                <input type="checkbox" id="set-guest-enabled" class="switch">
+              </label>
+              <div class="field-grid">
+                <label class="field"><span>监听端口</span><input class="nes-input" id="set-guest-port" type="number" min="1024" max="65535"></label>
+                <label class="field"><span>链接有效期（小时，0 表示永久）</span><input class="nes-input" id="set-guest-expiry" type="number" min="0" max="720"></label>
+                <label class="field"><span>单文件上限（MB）</span><input class="nes-input" id="set-guest-max-file" type="number" min="1" max="1048576"></label>
+                <label class="field"><span>单批上限（MB）</span><input class="nes-input" id="set-guest-max-batch" type="number" min="1" max="1048576"></label>
+              </div>
+              <div class="kv"><span>接收目录</span><code id="set-guest-inbox">—</code></div>
+              <div class="guest-urls" id="set-guest-urls"></div>
+              <p class="faint" id="set-guest-urls-more" hidden></p>
+              <div class="btn-row">
+                <button class="nes-btn" data-action="guest-copy-link">复制主链接</button>
+                <button class="nes-btn" data-action="guest-rotate">更新链接与访问码</button>
+              </div>
+            </div>
+          </section>
+
+          </div>
+          <div class="settings-col">
+          <section class="panel settings-card">
+            <div class="panel-head"><h3 class="panel-title">接收与归档</h3></div>
+            <div class="panel-body">
+              <label class="field"><span>默认接收位置</span>
+                <div class="input-row">
+                  <input class="nes-input" id="set-download" autocomplete="off">
+                  <button class="nes-btn" id="pick-download">选择</button>
+                </div>
+              </label>
+              <label class="switch-row">
+                <div><strong>自动接受传输</strong><span>仅对已配对设备生效，省去每次确认</span></div>
+                <input type="checkbox" id="set-auto-accept" class="switch">
+              </label>
+              <label class="switch-row">
+                <div><strong>保留旧版本归档</strong><span>覆盖同名文件时移入 .lanlink-archive，而不是生成冲突副本</span></div>
+                <input type="checkbox" id="set-archive" class="switch">
+              </label>
+              <label class="field"><span>未完成分块保留时长（小时，0 表示永久）</span><input class="nes-input" id="set-ttl" type="number" min="0" max="720"></label>
+            </div>
+          </section>
+
+          <section class="panel settings-card">
+            <div class="panel-head"><h3 class="panel-title">网络</h3></div>
+            <div class="panel-body">
+              <label class="switch-row">
+                <div><strong>局域网自动发现</strong><span>通过 UDP 组播广播本机设备信息</span></div>
+                <input type="checkbox" id="set-discovery" class="switch">
+              </label>
+              <div class="kv"><span>TCP 接收端口</span><code id="set-tcp-port">—</code></div>
+              <div class="kv"><span>UDP 发现端口</span><code id="set-udp-port">—</code></div>
+              <p class="hint">如果系统防火墙弹窗，请允许 LanLink 在专用网络上通信。传输不依赖互联网。</p>
+            </div>
+          </section>
+
+          <section class="panel settings-card security-card">
+            <div class="panel-head"><h3 class="panel-title">安全模型</h3></div>
+            <div class="panel-body">
+              <ul class="nes-list is-circle">
+                <li>每台设备生成独立的 Ed25519 身份密钥，设备 ID 由公钥哈希派生。</li>
+                <li>连接时使用临时 X25519 密钥协商，会话密钥经 HKDF-SHA256 派生。</li>
+                <li>所有控制消息与文件分块均使用 AES-256-GCM 加密与认证。</li>
+                <li>配对时双方显示相同的 6 位校验码，可防止中间人攻击。</li>
+                <li>分块逐块 SHA-256 校验，失败自动重传。</li>
+                <li>访客模式是 HTTP 明文，仅建议在可信局域网内开启。</li>
+              </ul>
+            </div>
+          </section>
+          </div>
+        </div>
+
+        <div class="save-bar">
+          <span class="muted" id="settings-hint"></span>
+          <button class="nes-btn is-primary" id="save-settings">保存设置</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toasts" aria-live="polite"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

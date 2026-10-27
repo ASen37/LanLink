@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LanLink · 访客上传</title>
+  <link rel="icon" href="/guest/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/guest/vendor/fonts.css">
+  <link rel="stylesheet" href="/guest/vendor/nes.min.css">
+  <link rel="stylesheet" href="/guest/theme.css">
+  <link rel="stylesheet" href="/guest/guest.css">
+  <script src="/guest/theme.js"></script>
+</head>
+<body>
+  <main class="page">
+    <header class="top">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <path d="M2 2h6v1H2zM2 3h1v4H2zM7 3h1v1H7zM2 6h6v1H2zM9 6h5v1H9zM9 7h1v4H9zM13 7h1v4h-1zM9 10h5v1H9zM3 8h4v1H3zM3 9h1v1H3zM6 9h1v1H6zM3 10h4v1H3z"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <strong>LanLink</strong>
+          <span>GUEST UPLOAD</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="theme-switch" role="group" aria-label="配色主题">
+          <button class="theme-opt active" data-theme-opt="light" aria-pressed="true">亮</button>
+          <button class="theme-opt" data-theme-opt="dark" aria-pressed="false">暗</button>
+        </div>
+        <button class="nes-btn" id="logout-btn" hidden>退出</button>
+      </div>
+    </header>
+
+    <section class="view" id="view-login">
+      <div class="panel login-card">
+        <div class="panel-head"><h1 class="panel-title">访客上传</h1><span class="tag info">HTTP</span></div>
+        <div class="panel-body">
+          <p class="login-lead">请输入主机提供的 6 位访问码，文件会直接写入对方的局域网设备。</p>
+          <form id="login-form" autocomplete="off">
+            <input id="code-input" class="code-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" aria-label="6 位访问码" autocomplete="one-time-code">
+            <button class="nes-btn is-primary block" id="login-btn" type="submit">进入上传页</button>
+          </form>
+          <p class="error" id="login-error" hidden></p>
+          <p class="hint">访问码由主机生成，与邀请链接一起提供。链接或访问码错误时无法访问。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-upload" hidden>
+      <div class="host-line">
+        <span class="pulse"></span>
+        <span>正在上传到 <strong id="host-name">对方设备</strong></span>
+        <span class="sep">·</span>
+        <span id="expiry-text" class="faint"></span>
+      </div>
+
+      <div class="panel" id="picker-panel">
+        <div class="panel-head"><h2 class="panel-title">选择文件</h2><span class="tag info" id="picker-badge">STEP 1</span></div>
+        <div class="panel-body">
+          <div class="drop" id="dropzone">
+            <div class="drop-icon" aria-hidden="true">
+              <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+                <path d="M7 2h2v1H7zM6 3h1v1H6zM9 3h1v1H9zM5 4h1v1H5zM10 4h1v1h-1zM4 5h1v1H4zM11 5h1v1h-1zM7 5h2v7H7zM3 12h10v1H3zM4 11h1v1H4zM11 11h1v1h-1z"/>
+              </svg>
+            </div>
+            <strong>拖入文件或文件夹</strong>
+            <span class="faint">支持一次选择多个文件，以及整目录上传</span>
+            <div class="drop-actions">
+              <button class="nes-btn is-primary" id="pick-files-btn" type="button">选择文件</button>
+              <button class="nes-btn" id="pick-folder-btn" type="button">选择文件夹</button>
+            </div>
+            <input id="file-input" type="file" multiple hidden>
+            <input id="folder-input" type="file" webkitdirectory directory multiple hidden>
+          </div>
+
+          <div class="selection" id="selection" hidden>
+            <div class="selection-head">
+              <div>
+                <strong id="selection-count"></strong>
+                <span class="faint" id="selection-size"></span>
+              </div>
+              <button class="nes-btn" id="clear-selection" type="button">全部清除</button>
+            </div>
+            <div class="browse-crumb" id="browse-crumb">全部文件</div>
+            <ul class="file-list" id="selection-list"></ul>
+            <p class="error" id="picker-error" hidden></p>
+            <div class="start-row">
+              <button class="nes-btn is-primary" id="start-btn" type="button">开始上传</button>
+              <span class="faint" id="selection-hint"></span>
+              <div class="add-menu" id="add-menu">
+                <button class="nes-btn" id="add-more-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="add-menu-list">+ 添加文件 / 文件夹</button>
+                <div class="add-menu-list" id="add-menu-list" hidden role="menu">
+                  <button class="nes-btn" type="button" data-add="files" role="menuitem">添加文件</button>
+                  <button class="nes-btn" type="button" data-add="folder" role="menuitem">添加文件夹</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="progress-panel" hidden>
+        <div class="panel-head"><h2 class="panel-title">上传中</h2><span class="tag info" id="progress-badge">STEP 2</span></div>
+        <div class="panel-body">
+          <div class="progress-head">
+            <div>
+              <strong class="pct" id="pct">0%</strong>
+              <span class="faint" id="progress-sub">正在准备…</span>
+            </div>
+            <div class="speed">
+              <strong id="speed">—</strong>
+              <span class="faint" id="eta"></span>
+            </div>
+          </div>
+          <div class="bar big"><i id="overall-bar"></i></div>
+          <div class="progress-meta">
+            <span id="files-meta"></span>
+            <span id="bytes-meta"></span>
+          </div>
+          <ul class="file-list upload-list" id="upload-list"></ul>
+          <div class="progress-actions">
+            <button class="nes-btn is-error" id="cancel-btn" type="button">取消上传</button>
+            <span class="faint">请保持此页面打开，中断后重新选择相同文件可续传。</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel result-card" id="result-panel" hidden>
+        <div class="panel-body">
+          <div class="result-icon" id="result-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.6 4.6L19 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h2 id="result-title"></h2>
+          <p class="faint" id="result-sub"></p>
+          <div class="result-actions">
+            <button class="nes-btn is-primary" id="again-btn" type="button">继续上传</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span>文件仅在局域网内传输，不经过任何服务器。</span>
+      <span class="warn">当前为 HTTP 模式，请在可信网络中使用。</span>
+    </footer>
+  </main>
+
+  <script src="/guest/guest.js"></script>
+</body>
+</html>

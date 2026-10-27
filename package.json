@@ -1,0 +1,18 @@
+{
+  "name": "lanlink",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LanLink - LAN end-to-end encrypted file transfer with a desktop GUI",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev:a": "node src/server.js --data dev/node-a --ui-port 7421 --tcp-port 7423 --discovery-port 7424 --name Node-A --auto-trust",
+    "dev:b": "node src/server.js --data dev/node-b --ui-port 7431 --tcp-port 7433 --discovery-port 7424 --name Node-B --auto-trust",
+    "test": "node test/integration.js",
+    "test:guest": "node test/guest.js",
+    "bench": "node test/bench.js"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0"
+  }
+}

@@ -1,0 +1,459 @@
+/* ==========================================================================
+   LanLink 主题层：像素风设计令牌 + NES.css 组件配色覆盖
+   亮色为默认主题，[data-theme="dark"] 覆盖为暗色。
+   ========================================================================== */
+
+:root {
+  /* 画布与面板 */
+  --bg: #ececec;
+  --bg-dot: rgba(32, 35, 42, 0.08);
+  --panel: #ffffff;
+  --panel-2: #f4f4f4;
+  --panel-3: #e6e6e6;
+  --line: #20232a;
+  --line-soft: #b9bcc4;
+
+  /* 文字 */
+  --ink: #20232a;
+  --ink-2: #4d535d;
+  --ink-3: #7c828d;
+  --ink-inv: #ffffff;
+
+  /* 功能色 */
+  --accent: #209cee;
+  --accent-deep: #0a6ea8;
+  --accent-soft: #d6eefc;
+  --success: #92cc41;
+  --success-deep: #3f8a1f;
+  --success-soft: #e6f5d4;
+  --warn: #f7d51d;
+  --warn-deep: #8a6d00;
+  --warn-soft: #fdf6cf;
+  --error: #e76e55;
+  --error-deep: #992d17;
+  --error-soft: #fbe2dc;
+
+  --shadow: #c2c6cd;
+  --shadow-strong: #9aa0a9;
+
+  /* 像素边框：NES.css 的缺角边框需要具体颜色，这里按主题切换 data URI */
+  /* NES.css 自带的像素手形光标：给非 button 的可点击元素复用 */
+  --cursor-hand: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAzElEQVRYR+2X0Q6AIAhF5f8/2jYXZkwEjNSVvVUjDpcrGgT7FUkI2D9xRfQETwNIiWO85wfINfQUEyxBG2ArsLwC0jioGt5zFcwF4OYDPi/mBYKm4t0U8ATgRm3ThFoAqkhNgWkA0jJLvaOVSs7j3qMnSgXWBMiWPXe94QqMBMBc1VZIvaTu5u5pQewq0EqNZvIEMCmxAawK0DNkay9QmfFNAJUXfgGgUkLaE7j/h8fnASkxHTz0DGIBMCnBeeM7AArpUd3mz2x3C7wADglA8BcWMZhZAAAAAElFTkSuQmCC") 14 0, pointer;
+  --pixel-border: url("data:image/svg+xml;utf8,<svg version='1.1' width='5' height='5' xmlns='http://www.w3.org/2000/svg'><path d='M2 1 h1 v1 h-1 z M1 2 h1 v1 h-1 z M3 2 h1 v1 h-1 z M2 3 h1 v1 h-1 z' fill='%2320232a' /></svg>");
+  --pixel-border-soft: url("data:image/svg+xml;utf8,<svg version='1.1' width='5' height='5' xmlns='http://www.w3.org/2000/svg'><path d='M2 1 h1 v1 h-1 z M1 2 h1 v1 h-1 z M3 2 h1 v1 h-1 z M2 3 h1 v1 h-1 z' fill='%23b9bcc4' /></svg>");
+}
+
+[data-theme="dark"] {
+  --bg: #16171f;
+  --bg-dot: rgba(244, 244, 244, 0.05);
+  --panel: #232538;
+  --panel-2: #2b2e46;
+  --panel-3: #333757;
+  --line: #e8e8f0;
+  --line-soft: #4a4f72;
+
+  --ink: #f4f4f4;
+  --ink-2: #c3c9e0;
+  --ink-3: #8b93b0;
+  --ink-inv: #16171f;
+
+  --accent: #41a6f6;
+  --accent-deep: #2a7bc0;
+  --accent-soft: #1d3350;
+  --success: #99e550;
+  --success-deep: #4f8a1d;
+  --success-soft: #24361a;
+  --warn: #fbf236;
+  --warn-deep: #a89b00;
+  --warn-soft: #3a361a;
+  --error: #ef7d57;
+  --error-deep: #a93f1c;
+  --error-soft: #3d2118;
+
+  --shadow: #0d0e14;
+  --shadow-strong: #000000;
+
+  --pixel-border: url("data:image/svg+xml;utf8,<svg version='1.1' width='5' height='5' xmlns='http://www.w3.org/2000/svg'><path d='M2 1 h1 v1 h-1 z M1 2 h1 v1 h-1 z M3 2 h1 v1 h-1 z M2 3 h1 v1 h-1 z' fill='%23e8e8f0' /></svg>");
+  --pixel-border-soft: url("data:image/svg+xml;utf8,<svg version='1.1' width='5' height='5' xmlns='http://www.w3.org/2000/svg'><path d='M2 1 h1 v1 h-1 z M1 2 h1 v1 h-1 z M3 2 h1 v1 h-1 z M2 3 h1 v1 h-1 z' fill='%234a4f72' /></svg>");
+}
+
+* { box-sizing: border-box; }
+
+html {
+  font-size: 12px;
+  -webkit-text-size-adjust: 100%;
+}
+
+html, body {
+  margin: 0;
+}
+
+body {
+  min-height: 100%;
+  font-family: "Fusion Pixel", "Zpix", "Microsoft YaHei UI", "PingFang SC", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink);
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--bg-dot) 1px, transparent 1px);
+  background-size: 8px 8px;
+  -webkit-font-smoothing: none;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: 12px;
+  color: inherit;
+}
+
+a { color: var(--accent-deep); }
+
+::selection { background: var(--accent); color: #fff; }
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   NES.css 覆盖：把框架的硬编码黑白换成主题令牌，同时保留像素缺角边框
+   -------------------------------------------------------------------------- */
+
+.nes-btn,
+.nes-progress,
+.nes-input,
+.nes-textarea,
+.nes-select select {
+  border-image-source: var(--pixel-border);
+  border-image-slice: 2;
+  border-image-width: 2;
+  border-image-outset: 2;
+  border-image-repeat: stretch;
+}
+
+.nes-btn {
+  margin: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink);
+  background-color: var(--panel);
+}
+
+.nes-btn:hover {
+  color: var(--ink);
+  background-color: var(--panel-2);
+}
+
+.nes-btn.is-primary {
+  color: #fff;
+  background-color: var(--accent);
+  border-color: transparent;
+}
+
+.nes-btn.is-primary:hover { background-color: var(--accent-deep); }
+
+.nes-btn.is-success {
+  color: #10240a;
+  background-color: var(--success);
+}
+
+.nes-btn.is-success:hover { background-color: var(--success-deep); color: #fff; }
+
+.nes-btn.is-error {
+  color: #fff;
+  background-color: var(--error);
+}
+
+.nes-btn.is-error:hover { background-color: var(--error-deep); }
+
+.nes-btn.is-warning {
+  color: #2a2200;
+  background-color: var(--warn);
+}
+
+.nes-btn.is-warning:hover { background-color: var(--warn-deep); color: #fff; }
+
+.nes-btn.is-disabled,
+.nes-btn:disabled {
+  color: var(--ink-3);
+  background-color: var(--panel-3);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+[data-theme="dark"] .nes-btn::after { box-shadow: inset -4px -4px #12131a; }
+[data-theme="dark"] .nes-btn:hover::after { box-shadow: inset -6px -6px #12131a; }
+[data-theme="dark"] .nes-btn.is-primary::after { box-shadow: inset -4px -4px #1d5f96; }
+[data-theme="dark"] .nes-btn.is-primary:hover::after { box-shadow: inset -6px -6px #1d5f96; }
+[data-theme="dark"] .nes-btn.is-success::after { box-shadow: inset -4px -4px #3d6b12; }
+[data-theme="dark"] .nes-btn.is-error::after { box-shadow: inset -4px -4px #8f3d1c; }
+[data-theme="dark"] .nes-btn.is-warning::after { box-shadow: inset -4px -4px #7d7400; }
+[data-theme="dark"] .nes-btn.is-disabled::after { box-shadow: inset -4px -4px #191a22; }
+[data-theme="dark"] .nes-btn:focus { box-shadow: 0 0 0 6px rgba(65, 166, 246, 0.3); }
+
+.nes-input,
+.nes-select select {
+  width: 100%;
+  margin: 0;
+  padding: 7px 9px;
+  font-size: 12px;
+  color: var(--ink);
+  background-color: var(--panel);
+}
+
+.nes-input::placeholder { color: var(--ink-3); }
+.nes-input:focus { outline: 3px solid var(--accent); outline-offset: 1px; }
+
+.nes-select { margin: 0; }
+.nes-select select { cursor: inherit; }
+
+.nes-progress {
+  width: 100%;
+  height: 24px;
+  margin: 4px 0;
+  background-color: var(--panel-2);
+}
+
+.nes-progress::-webkit-progress-bar { background-color: var(--panel-2); }
+.nes-progress::-moz-progress-bar { background-color: var(--accent); }
+.nes-progress.is-primary::-webkit-progress-value { background-color: var(--accent); }
+.nes-progress.is-success::-webkit-progress-value { background-color: var(--success); }
+.nes-progress.is-warning::-webkit-progress-value { background-color: var(--warn); }
+.nes-progress.is-error::-webkit-progress-value { background-color: var(--error); }
+
+.nes-container {
+  border: 4px solid var(--line);
+  background-color: var(--panel);
+  color: var(--ink);
+}
+
+.nes-container.is-dark {
+  color: var(--ink-inv);
+  background-color: var(--line);
+}
+
+[data-theme="dark"] .nes-container.is-dark { color: var(--ink); background-color: var(--panel-2); }
+
+[data-theme="dark"] .nes-container.is-dark::after { background-color: var(--line); }
+
+.nes-dialog {
+  border: 4px solid var(--line);
+  background-color: var(--panel);
+  color: var(--ink);
+  padding: 24px;
+}
+
+.nes-list.is-disc li::before,
+.nes-list.is-circle li::before { color: var(--accent); }
+
+.nes-icon { margin-right: 8px; margin-bottom: 8px; }
+
+/* --------------------------------------------------------------------------
+   品牌与主题开关（桌面页 / 访客页共用）
+   -------------------------------------------------------------------------- */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 4px solid var(--line);
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
+.logo svg { width: 16px; height: 16px; }
+.logo svg path { fill: currentColor; }
+
+.brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+.brand-text strong { font-size: 24px; font-weight: 400; letter-spacing: 1px; }
+.brand-text span { font-size: 12px; color: var(--ink-3); letter-spacing: 2px; }
+
+.theme-switch {
+  display: flex;
+  border: 4px solid var(--line);
+  background: var(--panel-2);
+}
+
+.theme-opt {
+  min-width: 36px;
+  padding: 3px 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+
+.theme-opt + .theme-opt { border-left: 4px solid var(--line); }
+.theme-opt:hover { background: var(--panel-3); color: var(--ink); }
+.theme-opt.active { background: var(--accent); color: #fff; }
+
+/* --------------------------------------------------------------------------
+   原子组件
+   -------------------------------------------------------------------------- */
+
+.panel {
+  position: relative;
+  border: 4px solid var(--line);
+  background: var(--panel);
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
+[data-theme="dark"] .panel { box-shadow: 4px 4px 0 var(--shadow); }
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 4px solid var(--line);
+  background: var(--panel-2);
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+.panel-body { padding: 12px; }
+
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; align-items: center; gap: 8px; }
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.grow { flex: 1; min-width: 0; }
+
+/* NES 按钮自带 4px 外边距，用负边距把一组按钮对齐到网格 */
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -4px;
+}
+.btn-row .nes-btn { flex: 0 1 auto; }
+
+.muted { color: var(--ink-2); }
+.faint { color: var(--ink-3); }
+
+.mono {
+  font-family: "Cascadia Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+/* 状态小标签：像素色块 + 硬边框 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border: 2px solid currentColor;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+
+.tag.ok { color: var(--success-deep); background: var(--success-soft); }
+.tag.info { color: var(--accent-deep); background: var(--accent-soft); }
+.tag.warn { color: var(--warn-deep); background: var(--warn-soft); }
+.tag.err { color: var(--error-deep); background: var(--error-soft); }
+.tag.off { color: var(--ink-3); background: var(--panel-2); }
+
+[data-theme="dark"] .tag.ok { color: var(--success); }
+[data-theme="dark"] .tag.info { color: var(--accent); }
+[data-theme="dark"] .tag.warn { color: var(--warn); }
+[data-theme="dark"] .tag.err { color: var(--error); }
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  background: var(--ink-3);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.dot.online { background: var(--success); }
+.dot.connected { background: var(--accent); }
+.dot.busy { background: var(--warn); }
+.dot.error { background: var(--error); }
+
+/* 开关：像素拨杆 */
+input.switch {
+  appearance: none;
+  width: 48px;
+  height: 24px;
+  flex: 0 0 48px;
+  margin: 0;
+  padding: 0;
+  border: 4px solid var(--line);
+  background: var(--panel-3);
+  position: relative;
+  cursor: var(--cursor-hand);
+}
+
+input.switch::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  background: var(--ink-3);
+}
+
+input.switch:checked { background: var(--success-soft); border-color: var(--success-deep); }
+input.switch:checked::after { left: 24px; background: var(--success); }
+input.switch:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* 数字/等宽字段 */
+code, kbd {
+  font-family: "Cascadia Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 11px;
+}
+
+/* 滚动条：方形像素滑块 */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--panel-2); }
+::-webkit-scrollbar-thumb {
+  background: var(--line-soft);
+  border: 3px solid var(--panel-2);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
+
+/* 动效：像素级跳变，不使用缓动 */
+@keyframes pixel-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.35; }
+}
+
+@keyframes pixel-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translate(-4px, -4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

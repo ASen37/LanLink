@@ -1,0 +1,9 @@
+/* 中文像素字体：Fusion Pixel 12px Proportional SC（OFL-1.1）
+   12px 为原生像素网格，请使用 12 / 24 / 36 等整数倍字号以获得锐利边缘。 */
+@font-face {
+  font-family: "Fusion Pixel";
+  src: url("./fusion-pixel-12px.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}

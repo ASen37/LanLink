@@ -47,6 +47,7 @@ const GUEST_ASSETS = new Map([
   ['/guest/theme.css', 'theme.css'],
   ['/guest/theme.js', 'theme.js'],
   ['/guest/vendor/fonts.css', 'vendor/fonts.css'],
+  ['/guest/vendor/wordmark.css', 'vendor/wordmark.css'],
   ['/guest/vendor/nes.min.css', 'vendor/nes.min.css'],
   ['/guest/vendor/fusion-pixel-12px.woff2', 'vendor/fusion-pixel-12px.woff2'],
   ['/guest/favicon.png', 'favicon.png']

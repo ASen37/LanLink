@@ -384,3 +384,10 @@ body {
   .file-list { max-height: 240px; }
   .speed { text-align: right; }
 }
+
+/* 访客页字标：沿用桌面端 wordmark，尺寸略收 */
+.brand .ll-wordmark .wm-main { font-size: 28px; }
+.brand .ll-wordmark .wm-sub { font-size: 11px; letter-spacing: 5px; margin-top: 6px; }
+@media (max-width: 560px) {
+  .brand .ll-wordmark .wm-sub { display: none; }
+}

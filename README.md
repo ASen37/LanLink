@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo.svg" width="96" height="96" alt="LanLink logo">
+  <img src="docs/logo.png" width="96" height="96" alt="LanLink logo">
 </p>
 
 <h1 align="center">LanLink</h1>
@@ -36,8 +36,9 @@ LanLink 是一个 **局域网内点对点文件直传工具**：两台电脑都�
 - **文件夹原样保留**：目录结构、空文件都能还原；同名文件支持「自动跳过 / 旧版本归档 / 冲突副本」三种策略。
 - **访客零安装**：对方只需浏览器，随机令牌 + 6 位访问码 + HttpOnly Cookie，用完即关或一键轮换链接。
 - **自动发现**：UDP 组播广播附近设备；组播被禁、跨网段或开了 AP 隔离时，可以手动输入 IP 连接。
-- **像素风界面**：8bit 风格 UI（NES.css + 中文像素字体），支持亮色 / 暗色主题切换并记住选择。
+- **像素风界面**：8bit 风格 UI（NES.css + 中文像素字体 + 像素图标），支持亮色 / 暗色主题切换并记住选择。
 - **轻量干净**：运行时无第三方依赖，不写注册表、不装服务、不引入常驻后台。
+- **即开即用**：提供 Windows 免安装绿色包，解压即用，不需要安装程序。
 
 ## 📸 界面
 
@@ -87,6 +88,20 @@ npm run dev:b   # http://127.0.0.1:7431
 
 两个实例共用 UDP 发现端口，数据目录分别为 `dev/node-a`、`dev/node-b`，并开启自动信任（仅用于本地联调）。
 
+## 📦 打包（Windows）
+
+```bash
+npm install
+npm run dist:win
+```
+
+输出在 `bin/LanLink-win32-x64/`，双击 `LanLink.exe` 即可运行：
+
+- **免安装绿色版**：不写注册表、没有安装向导，整个文件夹拷贝到任意位置都能用
+- 不能只拷 `LanLink.exe`，它依赖同目录的 Electron 运行库和 `resources/app.asar`
+- 当前未做代码签名，首次运行可能出现 SmartScreen「未知发布者」提示
+- 若打包时卡在下载 Electron，可设置 `ELECTRON_MIRROR` 或使用 `--electron-zip-dir` 指向本地包
+
 ## 🔀 两种传输方式
 
 | | 设备互传 | 访客网页上传 |
@@ -123,6 +138,7 @@ npm run dev:b   # http://127.0.0.1:7431
 
 ```
 lanlink/
+├─ build/                应用图标（icon.png / icon.ico，打包用）
 ├─ src/
 │  ├─ main.js            Electron 主进程（窗口、多开、系统对话框）
 │  ├─ preload.js         渲染进程 IPC 桥
@@ -137,7 +153,9 @@ lanlink/
 │  │  ├─ identity.js     设备身份与指纹
 │  │  └─ util.js         通用工具
 │  └─ ui/                桌面界面与访客页（原生 JS + NES.css）
+│     └─ vendor/         框架样式、像素字体、字标与导航图标
 ├─ test/                 集成测试 / 访客测试 / 性能基准
+├─ bin/                  打包输出（git 忽略）
 └─ docs/                 使用文档与截图
 ```
 
@@ -154,7 +172,7 @@ npm run bench        # 本机回环性能基准（两个独立服务进程）
 ## ⚠️ 已知限制
 
 - 访客模式为 HTTP 明文，仅限可信局域网使用，不要在公共 Wi-Fi 长期开启。
-- 目前没有二维码、手机 App、开机自启、自动更新和安装包，桌面版通过 `npm start` 启动。
+- 目前没有二维码、手机 App、开机自启、自动更新和安装程序；桌面版可用 `npm start` 运行源码，或使用 `npm run dist:win` 生成免安装绿色包。
 - 组播发现不跨路由器；跨网段、跨 VLAN 或开启 AP 隔离时请手动连接 IP。
 - 界面暂无「解除配对」入口：需要在设备卡片上点「断开」，或手工编辑数据目录里的 `trusted.json`。
 

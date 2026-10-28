@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LanLink · 像素图标预览</title>
+<link rel="stylesheet" href="../../src/ui/vendor/nes.min.css">
+<link rel="stylesheet" href="../../src/ui/vendor/fonts.css">
+<style>
+  body { font-family: "Fusion Pixel", "Press Start 2P", monospace; background: #ececec; padding: 32px; }
+  .plate { text-align: center; margin-bottom: 32px; }
+  .plate h1 { font-size: 36px; margin: 0 0 8px; }
+  .plate p { color: #4d535d; font-size: 12px; letter-spacing: 2px; }
+  .row { display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap; padding: 16px 0; }
+  .cell { text-align: center; }
+  .cell .lbl { display: block; margin-top: 8px; font-size: 12px; color: #7c828d; }
+  .variant-title { font-size: 16px; margin: 24px 0 8px; }
+  .dark { background: #16171f; color: #f4f4f4; margin-top: 32px; padding: 24px; }
+  .dark .cell .lbl { color: #8b93b0; }
+  img { image-rendering: pixelated; display: block; margin: 0 auto; }
+  .swatches span { display: inline-block; width: 28px; height: 28px; margin-right: 8px; vertical-align: middle; border: 2px solid #20232a; }
+</style>
+</head>
+<body>
+
+<div class="plate">
+  <h1>LanLink</h1>
+  <p>LAN P2P TRANSFER · PIXEL ICON PREVIEW</p>
+</div>
+
+<div class="nes-container is-rounded" style="padding:24px;">
+  <div class="variant-title">方案 A · link（推荐）双机直连 / 双向数据流</div>
+  <div class="row">
+    <div class="cell"><img src="png/lanlink-icon-16.png" width="16" height="16"><span class="lbl">16 favicon</span></div>
+    <div class="cell"><img src="png/lanlink-icon-32.png" width="32" height="32"><span class="lbl">32</span></div>
+    <div class="cell"><img src="png/lanlink-icon-48.png" width="48" height="48"><span class="lbl">48</span></div>
+    <div class="cell"><img src="png/lanlink-icon-64.png" width="64" height="64"><span class="lbl">64</span></div>
+    <div class="cell"><img src="png/lanlink-icon-128.png" width="128" height="128"><span class="lbl">128</span></div>
+    <div class="cell"><img src="png/lanlink-icon-256.png" width="128" height="128"><span class="lbl">256(预览)</span></div>
+  </div>
+
+  <div class="variant-title">方案 B · monogram 字母标 L + 前进箭头</div>
+  <div class="row">
+    <div class="cell"><img src="png/icon-monogram-16.png" width="16" height="16"><span class="lbl">16 favicon</span></div>
+    <div class="cell"><img src="png/icon-monogram-32.png" width="32" height="32"><span class="lbl">32</span></div>
+    <div class="cell"><img src="png/icon-monogram-64.png" width="64" height="64"><span class="lbl">64</span></div>
+    <div class="cell"><img src="png/icon-monogram-128.png" width="128" height="128"><span class="lbl">128</span></div>
+  </div>
+
+  <div class="variant-title">方案 C · bolt 闪电直传</div>
+  <div class="row">
+    <div class="cell"><img src="png/icon-bolt-16.png" width="16" height="16"><span class="lbl">16 favicon</span></div>
+    <div class="cell"><img src="png/icon-bolt-32.png" width="32" height="32"><span class="lbl">32</span></div>
+    <div class="cell"><img src="png/icon-bolt-64.png" width="64" height="64"><span class="lbl">64</span></div>
+    <div class="cell"><img src="png/icon-bolt-128.png" width="128" height="128"><span class="lbl">128</span></div>
+  </div>
+
+  <div class="variant-title">NES.css 配色</div>
+  <div class="swatches">
+    <span style="background:#209cee"></span><span style="background:#108de0"></span>
+    <span style="background:#006bb3"></span><span style="background:#92cc41"></span>
+    <span style="background:#f7d51d"></span><span style="background:#ffffff"></span>
+    <span style="background:#20232a"></span>
+  </div>
+</div>
+
+<div class="nes-container dark">
+  <div class="variant-title">暗色主题下的效果（方案 A）</div>
+  <div class="row">
+    <div class="cell"><img src="png/lanlink-icon-16.png" width="16" height="16"><span class="lbl">16</span></div>
+    <div class="cell"><img src="png/lanlink-icon-32.png" width="32" height="32"><span class="lbl">32</span></div>
+    <div class="cell"><img src="png/lanlink-icon-64.png" width="64" height="64"><span class="lbl">64</span></div>
+    <div class="cell"><img src="png/lanlink-icon-128.png" width="128" height="128"><span class="lbl">128</span></div>
+  </div>
+</div>
+
+</body>
+</html>

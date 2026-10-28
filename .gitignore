@@ -21,10 +21,14 @@ yarn-error.log*
 pnpm-debug.log*
 
 # 打包 / 构建产物
+bin/
 dist/
 out/
 release/
-build/
+build/*
+# 但应用图标要入库（Electron 窗口图标 + 以后打包用）
+!build/icon.png
+!build/icon.ico
 
 # 本地环境变量
 .env

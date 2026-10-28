@@ -391,3 +391,23 @@ body {
 @media (max-width: 560px) {
   .brand .ll-wordmark .wm-sub { display: none; }
 }
+
+/* 上传 / 下载切换 */
+.mode-tabs { display: flex; gap: 8px; }
+.mode-tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: 4px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  cursor: var(--cursor-hand, pointer);
+}
+.mode-tab.active { background: var(--accent); color: #fff; }
+.mode-tab[hidden] { display: none; }
+
+/* 下载列表 */
+.share-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.share-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.share-size { color: var(--ink-3); font-size: 11px; }
+.file-row .share-dl { flex: 0 0 auto; padding: 4px 10px; }

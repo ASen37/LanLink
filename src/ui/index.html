@@ -188,10 +188,8 @@
           <div class="panel-body">
             <div class="history-list" id="history-list"></div>
             <div class="empty" id="history-empty">
-              <div class="empty-art" aria-hidden="true">
-                <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
-                  <path d="M7 2h2v1H7zM6 3h1v1H6zM9 3h1v1H9zM4 4h1v1H4zM11 4h1v1h-1zM3 5h1v6H3zM12 5h1v6h-1zM4 11h1v1H4zM11 11h1v1h-1zM6 12h1v1H6zM9 12h1v1H9zM7 13h2v1H7zM7 5h1v4H7zM8 8h3v1H8z"/>
-                </svg>
+              <div class="empty-art sprite-frame kirby-frame" aria-hidden="true">
+                <i class="nes-kirby"></i>
               </div>
               <strong>还没有传输记录</strong>
               <span>完成或取消的传输会出现在这里。</span>
@@ -225,9 +223,22 @@
             <div class="panel-body">
               <p class="hint">没有安装 LanLink 的设备可以用浏览器打开链接，输入访问码后上传文件。链接使用随机令牌，仅建议在可信局域网内开启。</p>
               <label class="switch-row">
-                <div><strong>开启访客网页上传</strong><span>关闭后端口停止监听，已打开的访客页面立即失效</span></div>
+                <div><strong>开启访客网页上传</strong><span>关闭后端口立即停止监听；每次重启默认关闭，开启时会生成新链接与访问码</span></div>
                 <input type="checkbox" id="set-guest-enabled" class="switch">
               </label>
+              <label class="switch-row">
+                <div><strong>允许访客下载文件</strong><span>访客可在网页里浏览并下载你选择的文件或文件夹（只读）</span></div>
+                <input type="checkbox" id="set-guest-share" class="switch">
+              </label>
+              <div class="field">
+                <span>共享给访客的文件 / 文件夹</span>
+                <div class="row share-pick">
+                  <input class="nes-input" id="set-guest-share-path" readonly placeholder="未选择">
+                  <button class="nes-btn" id="pick-guest-share-dir" type="button">选文件夹</button>
+                  <button class="nes-btn" id="pick-guest-share-file" type="button">选文件</button>
+                </div>
+                <p class="faint">只暴露选中的文件或文件夹，访客无法访问其他路径；关闭开关立即失效。</p>
+              </div>
               <div class="field-grid">
                 <label class="field"><span>监听端口</span><input class="nes-input" id="set-guest-port" type="number" min="1024" max="65535"></label>
                 <label class="field"><span>链接有效期（小时，0 表示永久）</span><input class="nes-input" id="set-guest-expiry" type="number" min="0" max="720"></label>

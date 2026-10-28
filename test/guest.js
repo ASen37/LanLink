@@ -52,6 +52,11 @@ async function main() {
   const stamp = Date.now();
   const root = path.join(__dirname, '..', 'dev', `guest-test-${stamp}`);
   const downloadDir = path.join(root, 'downloads');
+  const shareDir = path.join(root, 'share');
+  await fsp.mkdir(path.join(shareDir, 'sub'), { recursive: true });
+  await fsp.writeFile(path.join(shareDir, 'a.txt'), 'hello guest');
+  await fsp.writeFile(path.join(shareDir, 'sub', 'b.bin'), Buffer.from([1, 2, 3, 4, 5]));
+  await fsp.writeFile(path.join(shareDir, '.hidden'), 'nope');
   const app = await startServer({
     dataDir: path.join(root, 'host'),
     uiPort: 0,
@@ -78,7 +83,8 @@ async function main() {
       guestPort: 0,
       guestExpiryHours: 1,
       guestMaxFileMB: 100,
-      guestMaxBatchMB: 200
+      guestMaxBatchMB: 200,
+      guestShareDir: shareDir
     });
     assert.equal(enabled.res.status, 200);
     let state = await (await fetch(`${host}/api/state`)).json();
@@ -109,6 +115,42 @@ async function main() {
     const cookie = r.res.headers.getSetCookie()[0].split(';')[0];
     assert.ok(cookie.includes('lanlink_guest='));
     console.log('✓ 令牌 + 访问码登录与错误码拒绝');
+
+    // ---- 共享目录（只读下载） ----
+    r = await guestFetch(base, '/api/share/list?path=', { cookie });
+    assert.equal(r.res.status, 200);
+    assert.deepEqual(r.data.entries.map((e) => e.name), ['sub', 'a.txt'], '下载列表应只含可见项');
+    r = await guestFetch(base, '/api/share/file?path=a.txt', { cookie });
+    assert.equal(r.res.status, 200);
+    assert.equal(r.data, 'hello guest');
+    assert.match(r.res.headers.get('content-disposition') || '', /attachment/);
+    r = await guestFetch(base, '/api/share/file?path=a.txt', { cookie, headers: { Range: 'bytes=0-4' } });
+    assert.equal(r.res.status, 206);
+    assert.equal(r.data, 'hello');
+    assert.equal(r.res.headers.get('content-range'), 'bytes 0-4/11');
+    r = await guestFetch(base, `/api/share/file?path=${encodeURIComponent('../host/identity.json')}`, { cookie });
+    assert.equal(r.res.status, 403, '目录穿越未被拦截');
+    r = await guestFetch(base, `/api/share/file?path=${encodeURIComponent('.hidden')}`, { cookie });
+    assert.equal(r.res.status, 403, '隐藏文件未被拦截');
+    r = await guestFetch(base, '/api/share/list?path=sub', { cookie });
+    assert.equal(r.res.status, 200);
+    assert.equal(r.data.entries[0].name, 'b.bin');
+    console.log('✓ 共享目录：列表 / 下载 / Range / 越权拦截');
+
+    // ---- 共享单个文件 ----
+    const fileShare = await post('/api/settings', { guestShareDir: path.join(shareDir, 'a.txt') });
+    assert.equal(fileShare.res.status, 200);
+    r = await guestFetch(base, '/api/share/list?path=', { cookie });
+    assert.equal(r.res.status, 200);
+    assert.equal(r.data.kind, 'file');
+    assert.equal(r.data.entries[0].name, 'a.txt');
+    r = await guestFetch(base, '/api/share/file?path=', { cookie });
+    assert.equal(r.res.status, 200);
+    assert.equal(r.data, 'hello guest');
+    r = await guestFetch(base, `/api/share/file?path=${encodeURIComponent('sub/b.bin')}`, { cookie });
+    assert.equal(r.res.status, 403, '单文件共享时不应允许其他路径');
+    await post('/api/settings', { guestShareDir: shareDir });
+    console.log('✓ 共享单个文件：只暴露该文件');
 
     const big = crypto.randomBytes(10 * 1024 * 1024 + 12345);
     const empty = Buffer.alloc(0);

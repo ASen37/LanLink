@@ -5,6 +5,9 @@
   const API = tokenMatch ? `/u/${tokenMatch[1]}/api` : null;
 
   const $ = (selector, root = document) => root.querySelector(selector);
+  const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
   const MAX_FILES = 20000;
   const MAX_ROWS = 400;
   const FILE_WORKERS = 2;
@@ -16,6 +19,9 @@
 
   const state = {
     info: null,
+    mode: 'upload',
+    sharePath: '',
+    shareName: '',
     chunkSize: 4 * 1024 * 1024,
     deviceName: '',
     expiresAt: 0,
@@ -115,7 +121,13 @@
   function showView(name) {
     $('#view-login').hidden = name !== 'login';
     $('#view-upload').hidden = name !== 'upload';
-    $('#logout-btn').hidden = name !== 'upload';
+    $('#view-download').hidden = name !== 'download';
+    const logged = name === 'upload' || name === 'download';
+    $('#logout-btn').hidden = !logged;
+    $('#mode-tabs').hidden = !logged;
+    document.querySelectorAll('.mode-tab').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.mode === name);
+    });
   }
 
   function showLogin(message) {
@@ -146,7 +158,65 @@
     if (info.maxFileBytes) limits.push(`单文件上限 ${fmtBytes(info.maxFileBytes)}`);
     if (info.maxBatchBytes) limits.push(`单批上限 ${fmtBytes(info.maxBatchBytes)}`);
     $('#selection-hint').textContent = limits.join(' · ');
+    state.shareName = info.shareName || '';
+    const downloadTab = $('#mode-download');
+    if (downloadTab) downloadTab.hidden = !state.shareName;
+    $('#share-host').textContent = state.deviceName;
+    if (state.shareName) $('#share-badge').textContent = state.shareName;
     showView('upload');
+  }
+
+  // 共享目录（只读下载）
+  function shareFileUrl(rel) {
+    return `${API}/share/file?path=${encodeURIComponent(rel)}`;
+  }
+
+  async function openShare(path) {
+    state.mode = 'download';
+    state.sharePath = path || '';
+    showView('download');
+    const list = $('#share-list');
+    const error = $('#share-error');
+    const empty = $('#share-empty');
+    error.hidden = true;
+    empty.hidden = true;
+    list.innerHTML = '<li class="file-row"><span class="faint">正在读取…</span></li>';
+    try {
+      const data = await api(`/share/list?path=${encodeURIComponent(state.sharePath)}`);
+      renderShare(data);
+    } catch (err) {
+      if (err.status === 401) {
+        showLogin('会话已过期，请重新输入访问码');
+        return;
+      }
+      list.innerHTML = '';
+      error.textContent = err.message || '读取失败';
+      error.hidden = false;
+    }
+  }
+
+  function renderShare(data) {
+    const list = $('#share-list');
+    const crumb = $('#share-crumb');
+    const empty = $('#share-empty');
+    if (data.kind === 'file') {
+      crumb.textContent = `单个文件 · ${data.entries[0] ? data.entries[0].name : ''}`;
+    } else {
+      crumb.textContent = data.path ? `全部文件 / ${data.path.split('/').join(' / ')}` : '全部文件';
+    }
+    const rows = [];
+    if (data.path) {
+      rows.push(`<li class="file-row nav-row"><button class="nav-btn" type="button" data-share-dir="${esc(data.parent)}"><span class="file-ico">${FOLDER_ICON}</span><span>..</span><span class="faint">返回上级目录</span></button></li>`);
+    }
+    for (const item of data.entries) {
+      if (item.dir) {
+        rows.push(`<li class="file-row nav-row"><button class="nav-btn" type="button" data-share-dir="${esc(item.path)}"><span class="file-ico">${FOLDER_ICON}</span><span class="share-name">${esc(item.name)}/</span></button></li>`);
+      } else {
+        rows.push(`<li class="file-row"><span class="file-ico">${FILE_ICON}</span><div class="share-meta"><span class="share-name">${esc(item.name)}</span><span class="share-size">${fmtBytes(item.size)}</span></div><a class="nes-btn share-dl" href="${shareFileUrl(item.path)}" download="${esc(item.name)}">下载</a></li>`);
+      }
+    }
+    list.innerHTML = rows.join('');
+    empty.hidden = data.entries.length > 0;
   }
 
   function showPickerPanel() {
@@ -1031,6 +1101,22 @@
         state.browseDir = navBtn.dataset.dir || '';
         renderSelection();
       }
+    });
+
+    // 上传 / 下载切换 + 下载列表
+    document.querySelectorAll('.mode-tab').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.mode === 'download') {
+          openShare(state.sharePath || '');
+        } else {
+          showView('upload');
+        }
+      });
+    });
+    $('#share-refresh').addEventListener('click', () => openShare(state.sharePath || ''));
+    $('#share-list').addEventListener('click', (event) => {
+      const navBtn = event.target.closest('[data-share-dir]');
+      if (navBtn) openShare(navBtn.dataset.shareDir || '');
     });
 
     // 右下角「添加文件 / 文件夹」菜单

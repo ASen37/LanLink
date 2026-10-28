@@ -37,7 +37,18 @@ const MIME = {
   '.png': 'image/png',
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
-  '.woff': 'font/woff'
+  '.woff': 'font/woff',
+  '.txt': 'text/plain; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mp3': 'audio/mpeg',
+  '.pdf': 'application/pdf',
+  '.zip': 'application/zip'
 };
 
 // 访客页只暴露这些静态资源，路径必须显式登记，避免把服务端目录整体暴露出去
@@ -175,6 +186,11 @@ function chunkCountFor(size) {
 function chunkLengthFor(size, idx) {
   const offset = idx * CHUNK;
   return Math.max(0, Math.min(CHUNK, size - offset));
+}
+
+function contentDisposition(name) {
+  const fallback = String(name).replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(name)}`;
 }
 
 function lanUrls(port, token) {
@@ -449,6 +465,15 @@ class GuestServer {
       return sendJson(res, 401, { error: '请先输入访问码', auth: true });
     }
 
+    if (req.method === 'GET' && api === '/share') {
+      return this.sendShareInfo(res);
+    }
+    if (req.method === 'GET' && api === '/share/list') {
+      return this.sendShareList(res, url.searchParams.get('path'));
+    }
+    if ((req.method === 'GET' || req.method === 'HEAD') && api === '/share/file') {
+      return this.sendShareFile(req, res, url.searchParams.get('path'));
+    }
     if (req.method === 'GET' && api === '/info') {
       return sendJson(res, 200, {
         deviceName: this.manager.identity?.name || 'LanLink',
@@ -457,6 +482,8 @@ class GuestServer {
         maxBatchBytes: (this.settings.guestMaxBatchMB || 0) * 1024 * 1024,
         expiresAt: this.settings.guestExpiresAt || 0,
         inboxLabel: INBOX_NAME,
+        shareName: this.shareRoot() ? path.basename(this.shareRoot()) : '',
+        shareKind: this.shareKind(),
         serverTime: Date.now()
       });
     }
@@ -533,6 +560,159 @@ class GuestServer {
       this.onLog?.(`guest page missing: ${err.message}`);
       sendText(res, 500, '访客页面未就绪');
     }
+  }
+
+  // 共享目录（只读）：所有下载都限制在这个根目录内
+  shareRoot() {
+    const raw = typeof this.settings.guestShareDir === 'string' ? this.settings.guestShareDir.trim() : '';
+    if (!raw || !path.isAbsolute(raw)) return '';
+    try {
+      const real = fs.realpathSync(raw);
+      const st = fs.statSync(real);
+      return st.isDirectory() || st.isFile() ? real : '';
+    } catch {
+      return '';
+    }
+  }
+
+  shareKind() {
+    const root = this.shareRoot();
+    if (!root) return '';
+    try {
+      return fs.statSync(root).isDirectory() ? 'dir' : 'file';
+    } catch {
+      return '';
+    }
+  }
+
+  resolveSharePath(rel) {
+    const root = this.shareRoot();
+    if (!root) return null;
+    const clean = String(rel || '').replace(/\\/g, '/').replace(/^\/+/, '');
+    if (clean.includes('\0')) return null;
+    const rootStat = fs.statSync(root);
+    if (rootStat.isFile()) {
+      if (clean && clean !== path.basename(root)) return null;
+      return root;
+    }
+    if (clean.split('/').some((part) => part.startsWith('.'))) return null;
+    const abs = path.resolve(root, clean);
+    const inside = path.relative(root, abs);
+    if (!inside || inside.startsWith('..') || path.isAbsolute(inside)) {
+      if (inside !== '') return null;
+    }
+    try {
+      const real = fs.realpathSync(abs);
+      const relReal = path.relative(root, real);
+      if (relReal.startsWith('..') || path.isAbsolute(relReal)) return null;
+      return real;
+    } catch {
+      return null;
+    }
+  }
+
+  sendShareInfo(res) {
+    const root = this.shareRoot();
+    return sendJson(res, 200, {
+      enabled: Boolean(root),
+      name: root ? path.basename(root) : '',
+      kind: this.shareKind()
+    });
+  }
+
+  async sendShareList(res, rel) {
+    const root = this.shareRoot();
+    if (!root) return sendJson(res, 404, { error: '主机未开启文件下载' });
+    const abs = this.resolveSharePath(rel);
+    if (!abs) return sendJson(res, 403, { error: '路径不可访问' });
+    const stat = await fsp.stat(abs).catch(() => null);
+    if (!stat) return sendJson(res, 404, { error: '路径不存在' });
+    if (stat.isFile()) {
+      return sendJson(res, 200, {
+        root: path.basename(root),
+        kind: 'file',
+        path: '',
+        parent: '',
+        entries: [{
+          name: path.basename(abs),
+          dir: false,
+          size: stat.size,
+          mtime: stat.mtimeMs,
+          path: ''
+        }]
+      });
+    }
+    if (!stat.isDirectory()) return sendJson(res, 404, { error: '目录不存在' });
+
+    const entries = [];
+    const items = await fsp.readdir(abs, { withFileTypes: true }).catch(() => []);
+    for (const item of items) {
+      if (item.name.startsWith('.')) continue;
+      const full = path.join(abs, item.name);
+      const info = await fsp.lstat(full).catch(() => null);
+      if (!info || info.isSymbolicLink()) continue;
+      if (!info.isDirectory() && !info.isFile()) continue;
+      entries.push({
+        name: item.name,
+        dir: info.isDirectory(),
+        size: info.size,
+        mtime: info.mtimeMs,
+        path: path.relative(root, full).split(path.sep).join('/')
+      });
+    }
+    entries.sort((a, b) => Number(b.dir) - Number(a.dir) || a.name.localeCompare(b.name, 'zh'));
+    const current = String(rel || '').replace(/\\/g, '/').replace(/^\/+/, '');
+    const parent = current.includes('/') ? current.slice(0, current.lastIndexOf('/')) : '';
+    return sendJson(res, 200, { root: path.basename(root), kind: 'dir', path: current, parent, entries });
+  }
+
+  async sendShareFile(req, res, rel) {
+    const root = this.shareRoot();
+    if (!root) return sendJson(res, 404, { error: '主机未开启文件下载' });
+    const abs = this.resolveSharePath(rel);
+    if (!abs) return sendJson(res, 403, { error: '路径不可访问' });
+    const stat = await fsp.stat(abs).catch(() => null);
+    if (!stat || !stat.isFile()) return sendJson(res, 404, { error: '文件不存在' });
+
+    const name = path.basename(abs);
+    const headers = {
+      'Content-Type': MIME[path.extname(name).toLowerCase()] || 'application/octet-stream',
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'no-store',
+      'Content-Disposition': contentDisposition(name),
+      ...PAGE_HEADERS
+    };
+
+    let start = 0;
+    let end = stat.size - 1;
+    let code = 200;
+    const range = req.headers.range;
+    if (range) {
+      const match = /^bytes=(\d*)-(\d*)$/.exec(String(range).trim());
+      if (match) {
+        if (match[1] === '' && match[2] !== '') {
+          start = Math.max(0, stat.size - Number(match[2]));
+        } else {
+          start = Number(match[1] || 0);
+        }
+        if (match[2] !== '') end = Math.min(Number(match[2]), stat.size - 1);
+        if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || start >= stat.size) {
+          res.writeHead(416, { 'Content-Range': `bytes */${stat.size}`, ...PAGE_HEADERS });
+          res.end();
+          return;
+        }
+        code = 206;
+        headers['Content-Range'] = `bytes ${start}-${end}/${stat.size}`;
+      }
+    }
+
+    headers['Content-Length'] = end - start + 1;
+    headers.ETag = `"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`;
+    res.writeHead(code, headers);
+    if (req.method === 'HEAD') return res.end();
+    const stream = fs.createReadStream(abs, { start, end, highWaterMark: 1 << 20 });
+    stream.on('error', () => res.destroy());
+    stream.pipe(res);
   }
 
   handleLogin(req, res, ip, token) {

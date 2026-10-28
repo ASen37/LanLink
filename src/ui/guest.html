@@ -18,7 +18,7 @@
       <div class="brand">
         <div class="ll-wordmark" role="img" aria-label="LanLink">
           <div class="wm-main">Lan<b>Link</b></div>
-          <div class="wm-sub">GUEST UPLOAD</div>
+          <div class="wm-sub">GUEST ACCESS</div>
         </div>
       </div>
       <div class="top-actions">
@@ -29,6 +29,11 @@
         <button class="nes-btn" id="logout-btn" hidden>退出</button>
       </div>
     </header>
+
+    <nav class="mode-tabs" id="mode-tabs" hidden>
+      <button class="mode-tab active" type="button" data-mode="upload">上传文件</button>
+      <button class="mode-tab" type="button" data-mode="download" id="mode-download" hidden>下载文件</button>
+    </nav>
 
     <section class="view" id="view-login">
       <div class="panel login-card">
@@ -133,6 +138,29 @@
           <p class="faint" id="result-sub"></p>
           <div class="result-actions">
             <button class="nes-btn is-primary" id="again-btn" type="button">继续上传</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-download" hidden>
+      <div class="host-line">
+        <span class="pulse"></span>
+        <span>来自 <strong id="share-host">对方设备</strong> 的共享目录</span>
+        <span class="sep">·</span>
+        <span class="faint">只读，不会修改对方文件</span>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2 class="panel-title">可下载文件</h2><span class="tag info" id="share-badge">只读</span></div>
+        <div class="panel-body">
+          <div class="browse-crumb" id="share-crumb">全部文件</div>
+          <ul class="file-list" id="share-list"></ul>
+          <p class="error" id="share-error" hidden></p>
+          <p class="faint" id="share-empty" hidden>这个文件夹是空的</p>
+          <div class="start-row">
+            <button class="nes-btn" id="share-refresh" type="button">刷新列表</button>
+            <span class="faint">文件夹请进入后逐个下载。</span>
           </div>
         </div>
       </div>

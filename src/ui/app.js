@@ -451,6 +451,10 @@ function renderSettings() {
   if (document.activeElement !== $('#set-ttl')) $('#set-ttl').value = String(s.partialTtlHours ?? 24);
   $('#set-discovery').checked = Boolean(s.discoveryEnabled);
   $('#set-guest-enabled').checked = Boolean(s.guestEnabled);
+  const sharePath = s.guestShareDir || '';
+  $('#set-guest-share').checked = Boolean(sharePath);
+  const shareField = $('#set-guest-share-path');
+  if (shareField && document.activeElement !== shareField) shareField.value = sharePath;
   if (document.activeElement !== $('#set-guest-port')) $('#set-guest-port').value = String(s.guestPort ?? 7420);
   if (document.activeElement !== $('#set-guest-expiry')) $('#set-guest-expiry').value = String(s.guestExpiryHours ?? 12);
   if (document.activeElement !== $('#set-guest-max-file')) $('#set-guest-max-file').value = String(s.guestMaxFileMB ?? 4096);
@@ -1056,6 +1060,25 @@ async function openDataDir() {
   }
 }
 
+async function pickGuestShare(kind) {
+  const field = $('#set-guest-share-path');
+  const current = (field && field.value.trim()) || (state.settings.downloadDir || '');
+  let picked = '';
+  if (kind === 'file') {
+    if (!desktop || typeof desktop.pickShareFile !== 'function') {
+      toast('仅桌面版支持选择共享文件', 'warning');
+      return;
+    }
+    picked = await desktop.pickShareFile();
+  } else {
+    picked = await chooseFolder(current);
+  }
+  if (!picked) return;
+  field.value = picked;
+  $('#set-guest-share').checked = true;
+  markSettingsDirty();
+}
+
 async function pickDownloadDir() {
   const field = $('#set-download');
   const dir = await chooseFolder((field && field.value.trim()) || '');
@@ -1095,7 +1118,8 @@ async function saveSettings() {
       guestPort: Number.isFinite(guestPort) ? guestPort : undefined,
       guestExpiryHours: Number.isFinite(guestExpiry) ? guestExpiry : undefined,
       guestMaxFileMB: Number.isFinite(guestMaxFile) ? guestMaxFile : undefined,
-      guestMaxBatchMB: Number.isFinite(guestMaxBatch) ? guestMaxBatch : undefined
+      guestMaxBatchMB: Number.isFinite(guestMaxBatch) ? guestMaxBatch : undefined,
+      guestShareDir: $('#set-guest-share').checked ? $('#set-guest-share-path').value.trim() : ''
     });
     settingsDirty = false;
     $('#settings-hint').textContent = '设置已保存';
@@ -1188,6 +1212,16 @@ function bindEvents() {
   const changeDirBtn = $('#change-data-dir');
   if (changeDirBtn) changeDirBtn.addEventListener('click', () => changeDataDir().catch((err) => toast(err.message, 'error')));
   $('#pick-download').addEventListener('click', () => pickDownloadDir().catch((err) => toast(err.message, 'error')));
+  $('#pick-guest-share-dir').addEventListener('click', () => pickGuestShare('dir').catch((err) => toast(err.message, 'error')));
+  $('#pick-guest-share-file').addEventListener('click', () => pickGuestShare('file').catch((err) => toast(err.message, 'error')));
+  $('#set-guest-share').addEventListener('change', (event) => {
+    if (event.target.checked && !$('#set-guest-share-path').value.trim()) {
+      pickGuestShare('dir').catch((err) => toast(err.message, 'error'));
+    } else {
+      if (!event.target.checked) $('#set-guest-share-path').value = '';
+      markSettingsDirty();
+    }
+  });
   $('#save-settings').addEventListener('click', () => saveSettings());
   const resetBtn = $('#reset-settings');
   if (resetBtn) resetBtn.addEventListener('click', () => resetSettings());

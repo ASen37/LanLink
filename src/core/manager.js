@@ -48,6 +48,7 @@ class Manager extends EventEmitter {
       guestExpiryHours: 12,
       guestMaxFileMB: 4096,
       guestMaxBatchMB: 20480,
+      guestShareDir: '',
       guestToken: '',
       guestCode: '',
       guestExpiresAt: 0
@@ -79,6 +80,11 @@ class Manager extends EventEmitter {
       await this.identity.rename(this.opts.name);
     }
     await this.loadSettings();
+    // 安全策略：每次启动都关闭访客模式，并作废上一次的链接与访问码
+    this.settings.guestEnabled = false;
+    this.settings.guestExpiresAt = 0;
+    this.settings.guestToken = '';
+    this.settings.guestCode = '';
     await this.normalizeGuestSettings();
     if (this.settings.deviceName && this.settings.deviceName !== this.identity.name) {
       await this.identity.rename(this.settings.deviceName);
@@ -104,6 +110,14 @@ class Manager extends EventEmitter {
     s.guestMaxFileMB = Number.isFinite(maxFile) ? Math.max(1, Math.min(1048576, maxFile)) : 4096;
     const maxBatch = Number(s.guestMaxBatchMB);
     s.guestMaxBatchMB = Number.isFinite(maxBatch) ? Math.max(1, Math.min(1048576, maxBatch)) : 20480;
+    const shareDir = typeof s.guestShareDir === 'string' ? s.guestShareDir.trim() : '';
+    s.guestShareDir = '';
+    if (shareDir && path.isAbsolute(shareDir)) {
+      try {
+        const st = fs.statSync(shareDir);
+        if (st.isDirectory() || st.isFile()) s.guestShareDir = shareDir;
+      } catch { /* 路径不存在则视为关闭 */ }
+    }
     if (!/^[0-9a-f]{32}$/.test(String(s.guestToken || ''))) s.guestToken = randHex(16);
     if (!/^\d{6}$/.test(String(s.guestCode || ''))) s.guestCode = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
     const expiresAt = Number(s.guestExpiresAt);
@@ -987,6 +1001,11 @@ class Manager extends EventEmitter {
     let guestToggle = false;
     if (typeof patch.guestEnabled === 'boolean' && patch.guestEnabled !== this.settings.guestEnabled) {
       this.settings.guestEnabled = patch.guestEnabled;
+      if (patch.guestEnabled) {
+        // 每次开启都换新链接与访问码，避免旧链接被继续使用
+        this.settings.guestToken = randHex(16);
+        this.settings.guestCode = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+      }
       this.settings.guestExpiresAt = patch.guestEnabled && this.settings.guestExpiryHours > 0
         ? Date.now() + this.settings.guestExpiryHours * 3600 * 1000
         : 0;
@@ -1020,6 +1039,18 @@ class Manager extends EventEmitter {
     if (patch.guestMaxBatchMB !== undefined) {
       const value = Number(patch.guestMaxBatchMB);
       if (Number.isFinite(value)) this.settings.guestMaxBatchMB = Math.max(1, Math.min(1048576, value));
+    }
+
+    if (patch.guestShareDir !== undefined) {
+      const raw = typeof patch.guestShareDir === 'string' ? patch.guestShareDir.trim() : '';
+      if (!raw) {
+        this.settings.guestShareDir = '';
+      } else if (path.isAbsolute(raw)) {
+        try {
+          const st = fs.statSync(raw);
+          if (st.isDirectory() || st.isFile()) this.settings.guestShareDir = raw;
+        } catch { /* 无效路径保持原值 */ }
+      }
     }
     await this.saveSettings();
     if (this.settings.discoveryEnabled) {
@@ -1059,6 +1090,7 @@ class Manager extends EventEmitter {
       guestExpiryHours: 12,
       guestMaxFileMB: 4096,
       guestMaxBatchMB: 20480,
+      guestShareDir: '',
       guestToken: '',
       guestCode: '',
       guestExpiresAt: 0
@@ -1183,7 +1215,8 @@ class Manager extends EventEmitter {
         guestPort: this.settings.guestPort,
         guestExpiryHours: this.settings.guestExpiryHours,
         guestMaxFileMB: this.settings.guestMaxFileMB,
-        guestMaxBatchMB: this.settings.guestMaxBatchMB
+        guestMaxBatchMB: this.settings.guestMaxBatchMB,
+        guestShareDir: this.settings.guestShareDir
       },
       guest: this.guestInfo(),
       peers,

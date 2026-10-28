@@ -1000,3 +1000,31 @@ input[type="number"] { appearance: textfield; }
   margin-top: 14px;
 }
 .data-actions .nes-btn { margin: 0; }
+
+/* 历史页空状态：NES.css 的 Kirby（96x96 缩到 48x48） */
+.empty-art.sprite-frame.kirby-frame {
+  border: 0;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  align-items: start;
+}
+.empty-art.sprite-frame.kirby-frame .nes-kirby {
+  display: block;
+  transform: scale(0.5);
+  transform-origin: top left;
+}
+
+/* 成组按钮之间留出间隔 */
+.hero-actions { gap: 10px; }
+.hero-actions .nes-btn { margin: 0; }
+.btn-row { gap: 10px; margin: 0; }
+.btn-row .nes-btn { margin: 0; }
+.data-actions { gap: 12px; }
+.modal-actions { gap: 8px; }
+
+#pick-guest-share { flex: 0 0 auto; white-space: nowrap; }
+
+.share-pick { flex-wrap: nowrap; }
+.share-pick .nes-input { flex: 1 1 auto; min-width: 0; }
+.share-pick .nes-btn { flex: 0 0 auto; white-space: nowrap; margin: 0; }

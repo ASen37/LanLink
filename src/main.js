@@ -154,6 +154,15 @@ ipcMain.handle('pick-folder', async (_event, startPath) => {
   return result.filePaths[0] || '';
 });
 
+ipcMain.handle('pick-share-file', async () => {
+  const result = await dialog.showOpenDialog(win, {
+    title: '选择要共享的文件',
+    properties: ['openFile']
+  });
+  if (result.canceled) return '';
+  return result.filePaths[0] || '';
+});
+
 ipcMain.handle('change-data-dir', async () => {
   const current = resolveDataDir();
   const result = await dialog.showOpenDialog(win, {

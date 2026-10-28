@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('lanlinkDesktop', {
   appInfo: () => ipcRenderer.invoke('app-info'),
   pickFiles: () => ipcRenderer.invoke('pick-files'),
   pickFolder: (startPath) => ipcRenderer.invoke('pick-folder', startPath),
+  pickShareFile: () => ipcRenderer.invoke('pick-share-file'),
   reveal: (target) => ipcRenderer.invoke('reveal', target),
   openDataDir: () => ipcRenderer.invoke('open-data'),
   changeDataDir: () => ipcRenderer.invoke('change-data-dir'),

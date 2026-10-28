@@ -12,6 +12,7 @@
   <img alt="electron" src="https://img.shields.io/badge/Electron-45-47848F?style=flat-square&logo=electron&logoColor=white">
   <img alt="runtime deps" src="https://img.shields.io/badge/runtime%20deps-0-blue?style=flat-square">
   <img alt="telemetry" src="https://img.shields.io/badge/telemetry-none-lightgrey?style=flat-square">
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-2ea44f?style=flat-square">
 </p>
 
 <p align="center">
@@ -163,7 +164,7 @@ npm run bench        # 本机回环性能基准（两个独立服务进程）
 
 ## 📄 许可证
 
-本项目目前 **未指定开源许可证**（默认保留所有权利）。如果打算开源分发，建议补充一份 `LICENSE`（例如 MIT），我也可以帮你加上。
+本项目基于 [MIT License](LICENSE) 开源，Copyright © 2026 ASen37。
 
 ---
 

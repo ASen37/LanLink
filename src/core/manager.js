@@ -1044,6 +1044,33 @@ class Manager extends EventEmitter {
     this.emitState();
   }
 
+  // 恢复出厂设置：保留设备身份（名称），其余回到首次启动的默认值
+  async resetSettings() {
+    const deviceName = this.settings.deviceName;
+    this.settings = {
+      deviceName,
+      downloadDir: path.join(os.homedir(), 'Downloads', 'LanLink'),
+      autoAccept: false,
+      archiveEnabled: true,
+      partialTtlHours: 24,
+      discoveryEnabled: true,
+      guestEnabled: false,
+      guestPort: 7420,
+      guestExpiryHours: 12,
+      guestMaxFileMB: 4096,
+      guestMaxBatchMB: 20480,
+      guestToken: '',
+      guestCode: '',
+      guestExpiresAt: 0
+    };
+    await this.saveSettings();
+    this.startDiscovery();
+    if (this.discovery) this.discovery.update({ tcpPort: this.tcpPort, uiPort: this.uiPort || 0 });
+    await this.applyGuest({ announce: false });
+    this.toast('已恢复默认设置', 'success');
+    this.emitState();
+  }
+
   onTick() {
     const now = Date.now();
     if (this.guest) this.guest.tick(now);

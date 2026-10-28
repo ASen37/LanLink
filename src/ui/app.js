@@ -42,6 +42,7 @@ let view = 'devices';
 let settingsDirty = false;
 let currentModal = null;
 let pickerResolve = null;
+let confirmResolve = null;
 let dirPickerResolve = null;
 let dirPickerPath = '';
 let dirPickerParent = null;
@@ -479,10 +480,59 @@ function closeModal() {
   pickerResolve = null;
   const dirResolver = dirPickerResolve;
   dirPickerResolve = null;
+  const confirm = confirmResolve;
+  confirmResolve = null;
   currentModal = null;
   modalRoot.innerHTML = '';
   if (resolver) resolver(null);
   if (dirResolver) dirResolver(null);
+  if (confirm) confirm(false);
+}
+
+// 统一风格的确认弹窗（替代原生 window.confirm）
+function confirmDialog(message, options = {}) {
+  const {
+    title = '确认操作',
+    okText = '确定',
+    cancelText = '取消',
+    danger = false
+  } = options;
+  return new Promise((resolve) => {
+    const previous = confirmResolve;
+    confirmResolve = null;
+    if (previous) previous(false);
+    confirmResolve = resolve;
+    const html = `
+      <h3>${esc(title)}</h3>
+      <p class="dialog-text">${esc(message)}</p>
+      <div class="modal-actions">
+        <button class="nes-btn" data-action="confirm-cancel">${esc(cancelText)}</button>
+        <button class="nes-btn ${danger ? 'is-error' : 'is-primary'}" data-action="confirm-ok" data-autofocus>${esc(okText)}</button>
+      </div>`;
+    openModal('confirm', 'confirm', html);
+  });
+}
+
+function finishConfirm(value) {
+  const resolve = confirmResolve;
+  confirmResolve = null;
+  currentModal = null;
+  modalRoot.innerHTML = '';
+  if (resolve) resolve(Boolean(value));
+}
+
+// 桌面端优先用系统文件夹选择框，浏览器模式退回页面内的目录浏览器
+async function chooseFolder(startPath) {
+  if (desktop && typeof desktop.pickFolder === 'function') {
+    try {
+      const dir = await desktop.pickFolder(String(startPath || ''));
+      return dir || null;
+    } catch (err) {
+      toast(err.message || '无法打开文件夹选择框', 'error');
+      return null;
+    }
+  }
+  return openDirPicker(startPath);
 }
 
 function openDirPicker(startPath) {
@@ -507,7 +557,9 @@ function openDirPicker(startPath) {
         <div class="dir-list" id="dir-list"><span class="muted">正在读取…</span></div>
         <div class="dir-input-row">
           <input class="nes-input" id="dir-input" value="${esc(dirPickerPath)}" placeholder="输入绝对路径，例如 D:\\Downloads" autocomplete="off">
-          <button class="nes-btn" data-action="dir-go">前往</button>
+          ${desktop && typeof desktop.pickFolder === 'function'
+            ? '<button class="nes-btn" data-action="dir-native">选择本地文件夹</button>'
+            : '<button class="nes-btn" data-action="dir-go">前往</button>'}
         </div>
       </div>
       <div class="modal-actions">
@@ -781,7 +833,7 @@ async function pickPaths(kind) {
   if (!desktop) return;
   const target = pathsPeer;
   if (kind === 'folder') {
-    const dir = await openDirPicker((state && state.settings.downloadDir) || '');
+    const dir = await chooseFolder((state && state.settings.downloadDir) || '');
     if (!dir) { openPathsDialog(target); return; }
     await sendFlow([dir], target);
     return;
@@ -849,7 +901,7 @@ async function pickOfferDest() {
   const offerId = currentModal && currentModal.type === 'offer' ? currentModal.key : null;
   const input = $('#offer-dest');
   const current = input ? input.value.trim() : '';
-  const dir = await openDirPicker(current || (state && state.settings.downloadDir) || '');
+  const dir = await chooseFolder(current || (state && state.settings.downloadDir) || '');
   const offer = offerId && state ? (state.offers || []).find((o) => o.id === offerId) : null;
   if (offer) showOfferModal(offer, dir || current);
 }
@@ -885,7 +937,7 @@ async function removeHistory(id) {
 }
 
 async function clearHistory() {
-  if (!window.confirm('确定清空全部历史记录？此操作不可恢复。')) return;
+  if (!(await confirmDialog('确定清空全部历史记录？此操作不可恢复。', { title: '清空历史记录', okText: '清空', danger: true }))) return;
   try {
     await api('/api/history/clear', {});
     toast('历史记录已清空', 'success');
@@ -959,7 +1011,7 @@ async function openGuestLink() {
 
 async function rotateGuest() {
   if (!state || !state.guest || !state.guest.enabled) { toast('请先开启访客上传', 'warning'); return; }
-  if (!window.confirm('更新后旧链接和访问码立即失效，进行中的访客上传会被中断。继续？')) return;
+  if (!(await confirmDialog('更新后旧链接和访问码立即失效，进行中的访客上传会被中断。继续？', { title: '更新访客链接', okText: '继续' }))) return;
   try {
     await api('/api/guest/rotate', {});
     await fetchState();
@@ -1006,7 +1058,7 @@ async function openDataDir() {
 
 async function pickDownloadDir() {
   const field = $('#set-download');
-  const dir = await openDirPicker((field && field.value.trim()) || '');
+  const dir = await chooseFolder((field && field.value.trim()) || '');
   if (!dir) return;
   $('#set-download').value = dir;
   markSettingsDirty();
@@ -1058,10 +1110,24 @@ async function saveSettings() {
   }
 }
 
+async function resetSettings() {
+  if (!(await confirmDialog('恢复所有设置为默认值？设备名称与已配对设备会保留。', { title: '恢复默认设置', okText: '恢复', danger: true }))) return;
+  try {
+    await api('/api/settings/reset', {});
+    settingsDirty = false;
+    $('#settings-hint').textContent = '已恢复默认设置';
+    toast('已恢复默认设置', 'success');
+    setTimeout(() => {
+      if (!settingsDirty && $('#settings-hint').textContent === '已恢复默认设置') $('#settings-hint').textContent = '';
+    }, 2600);
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
 async function cancelTransfer(id) {
   try {
-    await api(`/api/transfers/${encodeURIComponent(id)}/cancel`, {});
-  } catch (err) {
+    await api(`/api/transfers/${encodeURIComponent(id)}/cancel`, {});  } catch (err) {
     toast(err.message, 'error');
   }
 }
@@ -1102,6 +1168,8 @@ function bindEvents() {
   $('#open-data-dir').addEventListener('click', () => openDataDir());
   $('#pick-download').addEventListener('click', () => pickDownloadDir().catch((err) => toast(err.message, 'error')));
   $('#save-settings').addEventListener('click', () => saveSettings());
+  const resetBtn = $('#reset-settings');
+  if (resetBtn) resetBtn.addEventListener('click', () => resetSettings());
   $('#refresh-peers').addEventListener('click', () => refreshPeers());
 
   const dropzone = $('#dropzone');
@@ -1169,6 +1237,18 @@ function bindEvents() {
         break;
       case 'dir-go':
         run(goDirFromInput());
+        break;
+      case 'dir-native':
+        run((async () => {
+          const dir = await desktop.pickFolder(dirPickerPath || '');
+          if (dir) finishDirPicker(dir);
+        })());
+        break;
+      case 'confirm-ok':
+        finishConfirm(true);
+        break;
+      case 'confirm-cancel':
+        finishConfirm(false);
         break;
       case 'dir-choose':
         finishDirPicker(dirPickerPath);

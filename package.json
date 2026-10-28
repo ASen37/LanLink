@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "description": "LanLink - LAN end-to-end encrypted file transfer with a desktop GUI",
+  "author": "ASen37",
+  "license": "MIT",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -10,9 +12,11 @@
     "dev:b": "node src/server.js --data dev/node-b --ui-port 7431 --tcp-port 7433 --discovery-port 7424 --name Node-B --auto-trust",
     "test": "node test/integration.js",
     "test:guest": "node test/guest.js",
-    "bench": "node test/bench.js"
+    "bench": "node test/bench.js",
+    "dist:win": "electron-packager . LanLink --platform=win32 --arch=x64 --out=bin --overwrite --icon=build/icon.ico"
   },
   "devDependencies": {
+    "@electron/packager": "^20.3.0",
     "electron": "^45.0.0"
   }
 }

@@ -1,0 +1,47 @@
+/* LanLink 像素字标
+   原版加粗描边样式：36px 主字 + 描边 + 双层台阶投影；
+   暗色跟随 [data-theme="dark"] 自动切换。 */
+.ll-wordmark {
+  display: inline-block;
+  font-family: "Fusion Pixel", "Press Start 2P", monospace;
+  line-height: 1;
+}
+
+.ll-wordmark .wm-main {
+  font-size: 36px;
+  line-height: 1;
+  color: #20232a;
+  /* 双层硬投影：4px 浅灰在前，6px 深灰在后，形成 NES 台阶感 */
+  text-shadow:
+    2px 0 0 currentColor, -2px 0 0 currentColor,
+    1px 0 0 currentColor, -1px 0 0 currentColor,
+    0 1px 0 currentColor, 0 -1px 0 currentColor,
+    4px 4px 0 #c2c6cd, 6px 6px 0 #9aa0a9;
+}
+
+.ll-wordmark .wm-main b { color: #209cee; font-weight: 400; }
+
+.ll-wordmark .wm-sub {
+  font-size: 12px;
+  letter-spacing: 6px;
+  color: #7c828d;
+  margin-top: 10px;
+}
+
+/* 暗色底（原 .on-dark，这里改成跟随主题属性） */
+[data-theme="dark"] .ll-wordmark .wm-main {
+  color: #f4f4f4;
+  text-shadow:
+    2px 0 0 currentColor, -2px 0 0 currentColor,
+    1px 0 0 currentColor, -1px 0 0 currentColor,
+    0 1px 0 currentColor, 0 -1px 0 currentColor,
+    4px 4px 0 #000000, 6px 6px 0 #0d0e14;
+}
+
+[data-theme="dark"] .ll-wordmark .wm-main b { color: #41a6f6; }
+[data-theme="dark"] .ll-wordmark .wm-sub { color: #8b93b0; }
+
+/* 窄窗口隐藏副标题，给导航让位置 */
+@media (max-width: 1180px) {
+  .brand .ll-wordmark .wm-sub { display: none; }
+}

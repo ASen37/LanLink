@@ -98,6 +98,7 @@ async function createWindow() {
     minHeight: 640,
     backgroundColor: '#080b12',
     title: 'LanLink',
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
     autoHideMenuBar: true,
     show: false,
     webPreferences: {
@@ -119,6 +120,18 @@ ipcMain.handle('pick-files', async () => {
     properties: ['openFile', 'multiSelections']
   });
   return result.canceled ? [] : result.filePaths;
+});
+
+ipcMain.handle('pick-folder', async (_event, startPath) => {
+  const options = {
+    title: '选择文件夹',
+    properties: ['openDirectory', 'createDirectory']
+  };
+  const start = typeof startPath === 'string' ? startPath.trim() : '';
+  if (start) options.defaultPath = start;
+  const result = await dialog.showOpenDialog(win, options);
+  if (result.canceled) return '';
+  return result.filePaths[0] || '';
 });
 
 ipcMain.handle('reveal', async (_event, target) => {
@@ -147,6 +160,8 @@ ipcMain.handle('app-info', () => ({
   platform: process.platform,
   isDesktop: true
 }));
+
+app.setAppUserModelId('com.asen.lanlink');
 
 app.whenReady().then(createWindow).catch((err) => {
   dialog.showErrorBox('LanLink 启动失败', err.message || String(err));

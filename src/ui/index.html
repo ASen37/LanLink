@@ -4,8 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LanLink · 局域网端到端直传</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.png" type="image/png">
+  <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="stylesheet" href="/vendor/fonts.css">
+  <link rel="stylesheet" href="/vendor/wordmark.css">
+  <link rel="stylesheet" href="/vendor/nav-icons.css">
   <link rel="stylesheet" href="/vendor/nes.min.css">
   <link rel="stylesheet" href="/theme.css">
   <link rel="stylesheet" href="/styles.css">
@@ -15,40 +18,27 @@
   <div class="app">
     <header class="topbar">
       <div class="brand">
-        <div class="logo" aria-hidden="true">
-          <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
-            <path d="M2 2h6v1H2zM2 3h1v4H2zM7 3h1v1H7zM2 6h6v1H2zM9 6h5v1H9zM9 7h1v4H9zM13 7h1v4h-1zM9 10h5v1H9zM3 8h4v1H3zM3 9h1v1H3zM6 9h1v1H6zM3 10h4v1H3z"/>
-          </svg>
-        </div>
-        <div class="brand-text">
-          <strong>LanLink</strong>
-          <span>LAN P2P TRANSFER</span>
+        <div class="ll-wordmark" role="img" aria-label="LanLink">
+          <div class="wm-main">Lan<b>Link</b></div>
+          <div class="wm-sub">LAN P2P TRANSFER</div>
         </div>
       </div>
 
       <nav class="nav" id="nav" aria-label="主导航">
         <button class="nav-item active" data-view="devices" aria-label="设备">
-          <svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">
-            <path d="M1 1h5v4H1zM1 2h1v2H1zM5 2h1v2H5zM1 5h5v1H1zM6 6h5v4H6zM6 7h1v2H6zM10 7h1v2h-1zM6 10h5v1H6zM6 4h1v1H6zM7 3h1v1H7z"/>
-          </svg>
+          <i class="ll-navicon ll-devices" aria-hidden="true"></i>
           <span>设备</span><em id="nav-devices-count"></em>
         </button>
         <button class="nav-item" data-view="transfers" aria-label="传输">
-          <svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">
-            <path d="M1 3h8v1H1zM6 1h1v1H6zM7 2h1v1H7zM8 3h1v1H8zM8 4h1v1H8zM7 5h1v1H7zM6 6h1v1H6zM10 8H2v1h8zM3 7h1v1H3zM4 6h1v1H4zM1 8h1v1H1z"/>
-          </svg>
+          <i class="ll-navicon ll-transfer" aria-hidden="true"></i>
           <span>传输</span><em id="nav-transfers-count"></em>
         </button>
         <button class="nav-item" data-view="history" aria-label="历史">
-          <svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">
-            <path d="M5 1h2v1H5zM4 2h1v1H4zM7 2h1v1H7zM3 3h1v1H3zM8 3h1v1H8zM2 4h1v4H2zM9 4h1v4H9zM3 8h1v1H3zM8 8h1v1H8zM4 9h1v1H4zM7 9h1v1H7zM5 10h2v1H5zM5 3h1v4H5zM6 6h3v1H6z"/>
-          </svg>
+          <i class="ll-navicon ll-history" aria-hidden="true"></i>
           <span>历史</span>
         </button>
         <button class="nav-item" data-view="settings" aria-label="设置">
-          <svg viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">
-            <path d="M5 1h2v1H5zM5 2h2v2H5zM3 3h2v1H3zM7 3h2v1H7zM2 5h1v2H2zM9 5h1v2H9zM3 8h2v1H3zM7 8h2v1H7zM5 8h2v2H5zM4 4h4v4H4zM5 5h2v2H5z"/>
-          </svg>
+          <i class="ll-navicon ll-gear" aria-hidden="true"></i>
           <span>设置</span>
         </button>
       </nav>
@@ -92,7 +82,7 @@
             <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="拖入文件或点击选择文件">
               <div class="drop-icon" aria-hidden="true">
                 <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
-                  <path d="M7 2h2v1H7zM6 3h1v1H6zM9 3h1v1H9zM5 4h1v1H5zM10 4h1v1h-1zM4 5h1v1H4zM11 5h1v1h-1zM7 5h2v7H7zM3 12h10v1H3zM4 11h1v1H4zM11 11h1v1h-1z"/>
+                  <path d="M7 1h2v1H7zM6 2h4v1H6zM5 3h6v1H5zM4 4h8v1H4zM7 5h2v6H7zM2 11h2v3H2zM12 11h2v3h-2zM2 14h12v2H2z"/>
                 </svg>
               </div>
               <div class="drop-copy">
@@ -113,10 +103,8 @@
               <div class="panel-body">
                 <div class="peer-grid" id="peer-grid"></div>
                 <div class="empty" id="peer-empty">
-                  <div class="empty-art" aria-hidden="true">
-                    <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
-                      <path d="M5 4h6v1H5zM4 5h1v1H4zM11 5h1v1h-1zM3 6h1v4H3zM12 6h1v4h-1zM4 10h1v1H4zM11 10h1v1h-1zM5 11h6v1H5zM12 11h2v1h-2zM13 12h1v2h-1zM7 7h2v2H7z"/>
-                    </svg>
+                  <div class="empty-art sprite-frame" aria-hidden="true">
+                    <i class="nes-logo"></i>
                   </div>
                   <strong>正在搜索局域网设备</strong>
                   <span>请确保另一台电脑也打开了 LanLink，并处于同一网段。</span>
@@ -180,10 +168,8 @@
         <div class="transfer-summary" id="transfer-summary"></div>
         <div class="transfer-list" id="transfer-list"></div>
         <div class="empty" id="transfer-empty">
-          <div class="empty-art" aria-hidden="true">
-            <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
-              <path d="M2 3h11v1H2zM2 4h1v8H2zM13 4h1v8h-1zM2 12h11v1H2zM5 6h6v1H5zM6 7h4v1H6zM7 8h2v1H7zM7 9h2v1H7z"/>
-            </svg>
+          <div class="empty-art sprite-frame mario-frame" aria-hidden="true">
+            <i class="nes-mario"></i>
           </div>
           <strong>暂无进行中的传输</strong>
           <span>在“设备”页选择一台设备开始发送。</span>
@@ -309,6 +295,7 @@
 
         <div class="save-bar">
           <span class="muted" id="settings-hint"></span>
+          <button class="nes-btn" id="reset-settings">恢复默认设置</button>
           <button class="nes-btn is-primary" id="save-settings">保存设置</button>
         </div>
       </section>

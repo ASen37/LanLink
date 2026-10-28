@@ -133,7 +133,7 @@ a { color: var(--accent-deep); }
 
 .nes-btn {
   margin: 4px;
-  padding: 6px 10px;
+  padding: 8px 14px;
   font-size: 12px;
   line-height: 1.4;
   color: var(--ink);
@@ -196,7 +196,7 @@ a { color: var(--accent-deep); }
 .nes-select select {
   width: 100%;
   margin: 0;
-  padding: 7px 9px;
+  padding: 9px 12px;
   font-size: 12px;
   color: var(--ink);
   background-color: var(--panel);
@@ -261,8 +261,8 @@ a { color: var(--accent-deep); }
 }
 
 .logo {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
   border: 4px solid var(--line);
@@ -271,7 +271,7 @@ a { color: var(--accent-deep); }
   box-shadow: 4px 4px 0 var(--shadow);
 }
 
-.logo svg { width: 16px; height: 16px; }
+.logo svg { width: 20px; height: 20px; }
 .logo svg path { fill: currentColor; }
 
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
@@ -285,8 +285,8 @@ a { color: var(--accent-deep); }
 }
 
 .theme-opt {
-  min-width: 36px;
-  padding: 3px 6px;
+  min-width: 44px;
+  padding: 6px 10px;
   border: 0;
   background: transparent;
   color: var(--ink-2);
@@ -314,8 +314,8 @@ a { color: var(--accent-deep); }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 10px;
+  padding: 12px 16px;
   border-bottom: 4px solid var(--line);
   background: var(--panel-2);
 }
@@ -330,9 +330,9 @@ a { color: var(--accent-deep); }
   letter-spacing: 1px;
 }
 
-.panel-body { padding: 12px; }
+.panel-body { padding: 16px; }
 
-.stack { display: flex; flex-direction: column; gap: 12px; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
 .row { display: flex; align-items: center; gap: 8px; }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .grow { flex: 1; min-width: 0; }
@@ -358,8 +358,8 @@ a { color: var(--accent-deep); }
 .tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 1px 6px;
+  gap: 6px;
+  padding: 2px 8px;
   border: 2px solid currentColor;
   font-size: 12px;
   line-height: 1.5;
@@ -394,9 +394,9 @@ a { color: var(--accent-deep); }
 /* 开关：像素拨杆 */
 input.switch {
   appearance: none;
-  width: 48px;
-  height: 24px;
-  flex: 0 0 48px;
+  width: 56px;
+  height: 28px;
+  flex: 0 0 56px;
   margin: 0;
   padding: 0;
   border: 4px solid var(--line);
@@ -410,13 +410,13 @@ input.switch::after {
   position: absolute;
   top: 0;
   left: 0;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   background: var(--ink-3);
 }
 
 input.switch:checked { background: var(--success-soft); border-color: var(--success-deep); }
-input.switch:checked::after { left: 24px; background: var(--success); }
+input.switch:checked::after { left: 28px; background: var(--success); }
 input.switch:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 /* 数字/等宽字段 */

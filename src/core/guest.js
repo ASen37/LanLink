@@ -49,7 +49,7 @@ const GUEST_ASSETS = new Map([
   ['/guest/vendor/fonts.css', 'vendor/fonts.css'],
   ['/guest/vendor/nes.min.css', 'vendor/nes.min.css'],
   ['/guest/vendor/fusion-pixel-12px.woff2', 'vendor/fusion-pixel-12px.woff2'],
-  ['/guest/favicon.svg', 'favicon.svg']
+  ['/guest/favicon.png', 'favicon.png']
 ]);
 
 const PAGE_HEADERS = {

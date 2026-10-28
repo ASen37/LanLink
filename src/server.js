@@ -290,6 +290,10 @@ async function startServer(opts = {}) {
         await manager.updateSettings(body);
         return sendJson(res, 200, manager.snapshot().settings);
       }
+      if (req.method === 'POST' && pathname === '/api/settings/reset') {
+        await manager.resetSettings();
+        return sendJson(res, 200, manager.snapshot().settings);
+      }
       if (req.method === 'POST' && pathname === '/api/guest/rotate') {
         const info = await manager.rotateGuestAccess();
         return sendJson(res, 200, info);

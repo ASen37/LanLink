@@ -190,10 +190,12 @@ function lanUrls(port, token) {
       const family = typeof item.family === 'string' ? item.family : item.family === 4 ? 'IPv4' : '';
       if (family !== 'IPv4' || item.internal) continue;
       if (item.address === '0.0.0.0' || item.address.startsWith('169.254.')) continue;
-      let score = 0;
-      if (item.address.startsWith('192.168.')) score = 3;
-      else if (item.address.startsWith('10.')) score = 3;
-      else if (/^172\.(1[6-9]|2\d|3[01])\./.test(item.address)) score = 3;
+      // 主链接优先级：192.168.* > 10.* / 172.16-31.* > 其他，
+      // 同一档里虚拟网卡再降权，保证复制出去的是最常见的那条局域网地址。
+      let score = 1;
+      if (item.address.startsWith('192.168.')) score = 6;
+      else if (item.address.startsWith('10.')) score = 4;
+      else if (/^172\.(1[6-9]|2\d|3[01])\./.test(item.address)) score = 4;
       if (/vEthernet|VirtualBox|VMware|Docker|WSL|Loopback|Tailscale|ZeroTier/i.test(name)) score -= 3;
       found.push({ url: `http://${item.address}:${port}/u/${token}`, address: item.address, score });
     }

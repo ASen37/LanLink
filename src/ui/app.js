@@ -1110,6 +1110,25 @@ async function saveSettings() {
   }
 }
 
+async function changeDataDir() {
+  if (!desktop || typeof desktop.changeDataDir !== 'function') {
+    toast('仅桌面版支持更改数据目录', 'warning');
+    return;
+  }
+  const ok = await confirmDialog(
+    '将把当前数据（身份、配置、历史）复制到新目录，然后重启应用生效。请选择一个空文件夹。',
+    { title: '更改数据目录', okText: '选择目录' }
+  );
+  if (!ok) return;
+  const result = await desktop.changeDataDir();
+  if (!result || result.canceled) return;
+  if (!result.ok) {
+    toast(result.error || '更改失败', 'error');
+    return;
+  }
+  toast('数据目录已更改，正在重启…', 'success');
+}
+
 async function resetSettings() {
   if (!(await confirmDialog('恢复所有设置为默认值？设备名称与已配对设备会保留。', { title: '恢复默认设置', okText: '恢复', danger: true }))) return;
   try {
@@ -1166,6 +1185,8 @@ function bindEvents() {
   $('#copy-fp').addEventListener('click', () => copyFingerprint().catch((err) => toast(err.message, 'error')));
   $('#history-clear').addEventListener('click', () => clearHistory());
   $('#open-data-dir').addEventListener('click', () => openDataDir());
+  const changeDirBtn = $('#change-data-dir');
+  if (changeDirBtn) changeDirBtn.addEventListener('click', () => changeDataDir().catch((err) => toast(err.message, 'error')));
   $('#pick-download').addEventListener('click', () => pickDownloadDir().catch((err) => toast(err.message, 'error')));
   $('#save-settings').addEventListener('click', () => saveSettings());
   const resetBtn = $('#reset-settings');

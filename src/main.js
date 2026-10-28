@@ -59,6 +59,26 @@ function claimProfile(base) {
 }
 
 const baseProfile = app.getPath('userData');
+
+// 自定义数据目录记录在 userData/data-path.txt，卸载脚本据此清理
+const DATA_POINTER = 'data-path.txt';
+
+function customDataDir() {
+  try {
+    const file = path.join(app.getPath('userData'), DATA_POINTER);
+    if (!fs.existsSync(file)) return '';
+    const raw = fs.readFileSync(file, 'utf8').trim();
+    if (!raw || !path.isAbsolute(raw)) return '';
+    const stat = fs.statSync(raw);
+    return stat.isDirectory() ? raw : '';
+  } catch {
+    return '';
+  }
+}
+
+function resolveDataDir() {
+  return customDataDir() || path.join(app.getPath('userData'), 'data');
+}
 const profile = claimProfile(baseProfile);
 if (profile.dir !== baseProfile) app.setPath('userData', profile.dir);
 
@@ -77,7 +97,7 @@ async function revealInOs(target) {
 }
 
 async function createWindow() {
-  const dataDir = path.join(app.getPath('userData'), 'data');
+  const dataDir = resolveDataDir();
   const opts = {
     dataDir,
     uiPort: 0,
@@ -132,6 +152,36 @@ ipcMain.handle('pick-folder', async (_event, startPath) => {
   const result = await dialog.showOpenDialog(win, options);
   if (result.canceled) return '';
   return result.filePaths[0] || '';
+});
+
+ipcMain.handle('change-data-dir', async () => {
+  const current = resolveDataDir();
+  const result = await dialog.showOpenDialog(win, {
+    title: '选择新的数据目录',
+    properties: ['openDirectory', 'createDirectory'],
+    defaultPath: path.dirname(current)
+  });
+  if (result.canceled || !result.filePaths[0]) return { ok: false, canceled: true };
+  const target = path.resolve(result.filePaths[0]);
+  if (target === path.resolve(current)) return { ok: false, error: '新目录与当前数据目录相同' };
+  const entries = await fsp.readdir(target).catch(() => null);
+  if (entries && entries.length) return { ok: false, error: '请选择空文件夹，避免与已有数据混在一起' };
+  try {
+    await fsp.mkdir(target, { recursive: true });
+    if (fs.existsSync(current)) {
+      await fsp.cp(current, target, { recursive: true, force: true });
+    }
+    const pointer = path.join(app.getPath('userData'), DATA_POINTER);
+    await fsp.mkdir(path.dirname(pointer), { recursive: true });
+    await fsp.writeFile(pointer, target, 'utf8');
+  } catch (err) {
+    return { ok: false, error: err.message || String(err) };
+  }
+  setTimeout(() => {
+    app.relaunch();
+    app.exit(0);
+  }, 500);
+  return { ok: true, dataDir: target };
 });
 
 ipcMain.handle('reveal', async (_event, target) => {

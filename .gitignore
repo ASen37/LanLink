@@ -26,9 +26,10 @@ dist/
 out/
 release/
 build/*
-# 但应用图标要入库（Electron 窗口图标 + 以后打包用）
+# 但应用图标与安装器脚本要入库（Electron 窗口图标 + 打包用）
 !build/icon.png
 !build/icon.ico
+!build/installer.nsh
 
 # 本地环境变量
 .env

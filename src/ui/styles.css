@@ -991,3 +991,12 @@ input[type="number"] { appearance: textfield; }
   font-size: 14px;
   line-height: 1.9;
 }
+
+/* 本机信息里的数据目录操作区（避开上方虚线） */
+.data-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.data-actions .nes-btn { margin: 0; }

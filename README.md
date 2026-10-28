@@ -92,13 +92,13 @@ npm run dev:b   # http://127.0.0.1:7431
 
 ```bash
 npm install
-npm run dist:win
+npm run dist:win        # 免安装绿色版 → bin/LanLink-win32-x64/
+npm run dist:installer  # NSIS 安装程序 → bin/installer/LanLink-Setup-1.0.0.exe
 ```
 
-输出在 `bin/LanLink-win32-x64/`，双击 `LanLink.exe` 即可运行：
-
-- **免安装绿色版**：不写注册表、没有安装向导，整个文件夹拷贝到任意位置都能用
-- 不能只拷 `LanLink.exe`，它依赖同目录的 Electron 运行库和 `resources/app.asar`
+- **绿色版**：整个文件夹拷贝到任意位置，双击 `LanLink.exe` 运行
+- **安装版**：向导式安装，可选安装目录，创建开始菜单 / 桌面快捷方式；卸载时会清理 `%APPDATA%\LanLink`（身份、配置、历史）以及通过「更改数据目录」指定过的自定义数据目录
+- 两种方式都不能只拷 `LanLink.exe`，它依赖同目录的 Electron 运行库和 `resources/app.asar`
 - 当前未做代码签名，首次运行可能出现 SmartScreen「未知发布者」提示
 - 若打包时卡在下载 Electron，可设置 `ELECTRON_MIRROR` 或使用 `--electron-zip-dir` 指向本地包
 

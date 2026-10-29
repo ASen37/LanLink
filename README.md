@@ -17,6 +17,7 @@
 
 <p align="center">
   <a href="docs/USAGE.md">完整使用文档</a> ·
+  <a href="#-下载">下载</a> ·
   <a href="#-快速开始">快速开始</a> ·
   <a href="#-安全模型">安全模型</a> ·
   <a href="#-常见问题">常见问题</a>
@@ -28,6 +29,15 @@ LanLink 是一个 **局域网内点对点文件直传工具**：两台电脑都�
 
 文件不会经过任何云端服务器，没有账号体系，也没有遥测和联网请求。桌面端基于 Electron，核心是一个 **零第三方运行时依赖** 的 Node.js 服务。
 
+## ⬇️ 下载
+
+**Windows 安装包（v1.0.0）**
+
+- [LanLink-Setup-1.0.0.exe](https://github.com/ASen37/LanLink/releases/download/v1.0.0/LanLink-Setup-1.0.0.exe) · 约 117 MiB
+- 全部版本：[GitHub Releases](https://github.com/ASen37/LanLink/releases)
+
+> Gitee 单个附件上限 100 MB，安装包统一放在 GitHub Releases；代码在两个仓库同步更新，克隆哪个都可以。
+
 ## ✨ 特性
 
 - **端到端加密**：Ed25519 长期身份 + X25519 临时密钥协商 + HKDF-SHA256 派生 + AES-256-GCM 逐帧加密认证，配对时用 6 位 SAS 验证码防中间人。
@@ -38,7 +48,7 @@ LanLink 是一个 **局域网内点对点文件直传工具**：两台电脑都�
 - **自动发现**：UDP 组播广播附近设备；组播被禁、跨网段或开了 AP 隔离时，可以手动输入 IP 连接。
 - **像素风界面**：8bit 风格 UI（NES.css + 中文像素字体 + 像素图标），支持亮色 / 暗色主题切换并记住选择。
 - **轻量干净**：运行时无第三方依赖，不写注册表、不装服务、不引入常驻后台。
-- **即开即用**：提供 Windows 免安装绿色包，解压即用，不需要安装程序。
+- **即开即用**：提供 Windows 免安装绿色包与向导式安装程序，按需选择。
 
 ## 📸 界面
 

@@ -1076,7 +1076,11 @@ async function pickGuestShare(kind) {
   if (!picked) return;
   field.value = picked;
   $('#set-guest-share').checked = true;
-  markSettingsDirty();
+  try {
+    await api('/api/settings', { guestShareDir: picked, guestEnabled: true });
+  } catch (err) {
+    toast(err.message, 'error');
+  }
 }
 
 async function pickDownloadDir() {
@@ -1214,12 +1218,40 @@ function bindEvents() {
   $('#pick-download').addEventListener('click', () => pickDownloadDir().catch((err) => toast(err.message, 'error')));
   $('#pick-guest-share-dir').addEventListener('click', () => pickGuestShare('dir').catch((err) => toast(err.message, 'error')));
   $('#pick-guest-share-file').addEventListener('click', () => pickGuestShare('file').catch((err) => toast(err.message, 'error')));
-  $('#set-guest-share').addEventListener('change', (event) => {
-    if (event.target.checked && !$('#set-guest-share-path').value.trim()) {
-      pickGuestShare('dir').catch((err) => toast(err.message, 'error'));
-    } else {
-      if (!event.target.checked) $('#set-guest-share-path').value = '';
-      markSettingsDirty();
+  // 两个访客开关即时生效，并同步到设备页的访客卡片
+  $('#set-guest-enabled').addEventListener('change', async (event) => {
+    const checked = event.target.checked;
+    try {
+      await api('/api/settings', { guestEnabled: checked });
+    } catch (err) {
+      event.target.checked = !checked;
+      toast(err.message, 'error');
+    }
+  });
+
+  $('#set-guest-share').addEventListener('change', async (event) => {
+    const box = event.target;
+    const field = $('#set-guest-share-path');
+    try {
+      if (box.checked) {
+        let dir = field.value.trim();
+        if (!dir) {
+          dir = await chooseFolder(state.settings.downloadDir || '');
+          if (!dir) {
+            box.checked = false;
+            return;
+          }
+          field.value = dir;
+        }
+        // 开启下载共享时同时开启访客模式，设备页卡片才会显示“运行中”
+        await api('/api/settings', { guestShareDir: dir, guestEnabled: true });
+      } else {
+        field.value = '';
+        await api('/api/settings', { guestShareDir: '' });
+      }
+    } catch (err) {
+      box.checked = !box.checked;
+      toast(err.message, 'error');
     }
   });
   $('#save-settings').addEventListener('click', () => saveSettings());

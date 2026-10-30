@@ -40,6 +40,7 @@ class Manager extends EventEmitter {
       deviceName: opts.name || '',
       downloadDir: path.join(os.homedir(), 'Downloads', 'LanLink'),
       autoAccept: false,
+      requireCode: true,
       archiveEnabled: true,
       partialTtlHours: 24,
       discoveryEnabled: opts.discovery !== false,
@@ -299,6 +300,7 @@ class Manager extends EventEmitter {
       tcpPort: this.tcpPort,
       uiPort: this.uiPort || 0,
       port: this.discoveryPort,
+      requireCode: this.settings.requireCode !== false,
       onPeer: (packet, rinfo) => this.onDiscovered(packet, rinfo),
       onLog: (msg) => this.opts.log?.(msg)
     });
@@ -317,6 +319,7 @@ class Manager extends EventEmitter {
       host: rinfo.address,
       tcpPort: Number(packet.tcpPort) || existing?.tcpPort,
       uiPort: Number(packet.uiPort) || existing?.uiPort,
+      requireCode: packet.requireCode !== false,
       trusted: Boolean(trustedEntry),
       source: existing?.source === 'manual' ? 'manual' : 'lan',
       lastSeen: Date.now(),
@@ -329,7 +332,7 @@ class Manager extends EventEmitter {
 
   async handleSocket(socket) {
     try {
-      const channel = await accept(socket, this.identity, { tcpPort: this.tcpPort, uiPort: this.uiPort });
+      const channel = await accept(socket, this.identity, { tcpPort: this.tcpPort, uiPort: this.uiPort, requireCode: this.settings.requireCode !== false });
       if (channel.peer.id === this.identity.id) {
         channel.close('self connect');
         return;
@@ -368,6 +371,7 @@ class Manager extends EventEmitter {
       fingerprint: peer.fingerprint,
       host: host || known.host || channel.remoteAddress,
       tcpPort: port || peer.tcpPort || known.tcpPort,
+      requireCode: peer.requireCode !== false,
       trusted: session.trusted,
       lastSeen: Date.now(),
       online: true,
@@ -461,14 +465,21 @@ class Manager extends EventEmitter {
           await session.channel.send({ t: 'pair_ok' });
           return;
         }
+        const codeRequired = this.settings.requireCode !== false && session.peer.requireCode !== false;
         this.pairRequests.set(session.peer.id, {
           sessionId: session.peer.id,
           peer: session.peer,
           sas: session.sas,
+          codeRequired,
           initiated: false,
           at: Date.now()
         });
-        this.toast(`${session.peer.name} 请求配对，验证码 ${session.sas}`, 'info');
+        this.toast(
+          codeRequired
+            ? `${session.peer.name} 请求配对，验证码 ${session.sas}`
+            : `${session.peer.name} 请求配对，请在弹窗中确认`,
+          'info'
+        );
         this.emitState();
         if (this.autoTrust) await this.acceptPair(session.peer.id);
         return;
@@ -622,7 +633,7 @@ class Manager extends EventEmitter {
     if (!peer.host || !peer.tcpPort) throw new Error('设备当前不在线');
     let channel;
     try {
-      channel = await connect(peer.host, peer.tcpPort, this.identity, { tcpPort: this.tcpPort, uiPort: this.uiPort });
+      channel = await connect(peer.host, peer.tcpPort, this.identity, { tcpPort: this.tcpPort, uiPort: this.uiPort, requireCode: this.settings.requireCode !== false });
     } catch (err) {
       throw new Error(`无法连接 ${peer.name}：${err.message}`);
     }
@@ -636,15 +647,30 @@ class Manager extends EventEmitter {
 
   requestPair(session) {
     if (this.pairRequests.has(session.peer.id)) return;
+    if (this.settings.requireCode === false && session.peer.requireCode !== false) {
+      const err = new Error('对方已开启配对验证，请先在本机开启验证码校验');
+      err.code = 'PAIR_CODE_REQUIRED';
+      err.peer = { id: session.peer.id, name: session.peer.name };
+      try { session.channel.close('pair code required'); } catch { /* noop */ }
+      this.sessions.delete(session.peer.id);
+      throw err;
+    }
+    const codeRequired = this.settings.requireCode !== false && session.peer.requireCode !== false;
     this.pairRequests.set(session.peer.id, {
       sessionId: session.peer.id,
       peer: session.peer,
       sas: session.sas,
+      codeRequired,
       initiated: true,
       at: Date.now()
     });
     session.channel.send({ t: 'pair_req' }).catch(() => {});
-    this.toast(`已向 ${session.peer.name} 发起配对，验证码 ${session.sas}`, 'info');
+    this.toast(
+      codeRequired
+        ? `已向 ${session.peer.name} 发起配对，验证码 ${session.sas}`
+        : `已向 ${session.peer.name} 发起配对，等待对方确认`,
+      'info'
+    );
     this.emitState();
   }
 
@@ -691,7 +717,7 @@ class Manager extends EventEmitter {
       const port = entry?.lastPort || known.tcpPort;
       if (host && port) {
         try {
-          const channel = await connect(host, Number(port), this.identity, { tcpPort: this.tcpPort, uiPort: this.uiPort });
+          const channel = await connect(host, Number(port), this.identity, { tcpPort: this.tcpPort, uiPort: this.uiPort, requireCode: this.settings.requireCode !== false });
           if (channel.peer.id === peerId) {
             await notifyUnpair(channel);
             channel.close('user disconnect');
@@ -965,7 +991,7 @@ class Manager extends EventEmitter {
   }
 
   async dialManual(host, port) {
-    const channel = await connect(host, Number(port), this.identity, { tcpPort: this.tcpPort, uiPort: this.uiPort });
+    const channel = await connect(host, Number(port), this.identity, { tcpPort: this.tcpPort, uiPort: this.uiPort, requireCode: this.settings.requireCode !== false });
     if (channel.peer.id === this.identity.id) {
       channel.close('self connect');
       throw new Error('不能连接本机');
@@ -994,6 +1020,10 @@ class Manager extends EventEmitter {
     }
     if (patch.downloadDir) this.settings.downloadDir = path.resolve(String(patch.downloadDir));
     if (typeof patch.autoAccept === 'boolean') this.settings.autoAccept = patch.autoAccept;
+    if (typeof patch.requireCode === 'boolean') this.settings.requireCode = patch.requireCode;
+    if (typeof patch.requireCode === 'boolean' && this.discovery) {
+      this.discovery.update({ requireCode: this.settings.requireCode !== false });
+    }
     if (typeof patch.archiveEnabled === 'boolean') this.settings.archiveEnabled = patch.archiveEnabled;
     if (typeof patch.discoveryEnabled === 'boolean') this.settings.discoveryEnabled = patch.discoveryEnabled;
     if (Number.isFinite(patch.partialTtlHours)) this.settings.partialTtlHours = Math.max(0, Math.min(720, patch.partialTtlHours));
@@ -1082,6 +1112,7 @@ class Manager extends EventEmitter {
       deviceName,
       downloadDir: path.join(os.homedir(), 'Downloads', 'LanLink'),
       autoAccept: false,
+      requireCode: true,
       archiveEnabled: true,
       partialTtlHours: 24,
       discoveryEnabled: true,
@@ -1190,7 +1221,8 @@ class Manager extends EventEmitter {
         connected: this.sessions.has(p.id),
         lastSeen: p.lastSeen,
         offlineAt: p.offlineAt || 0,
-        source: p.source
+        source: p.source,
+        requireCode: p.requireCode !== false
       }))
       .sort((a, b) => Number(b.online) - Number(a.online) || a.name.localeCompare(b.name));
     return {
@@ -1208,6 +1240,7 @@ class Manager extends EventEmitter {
         deviceName: this.identity.name,
         downloadDir: this.settings.downloadDir,
         autoAccept: this.settings.autoAccept,
+        requireCode: this.settings.requireCode !== false,
         archiveEnabled: this.settings.archiveEnabled,
         partialTtlHours: this.settings.partialTtlHours,
         discoveryEnabled: this.settings.discoveryEnabled,

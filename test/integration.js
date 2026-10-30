@@ -154,6 +154,8 @@ async function main() {
   let d = null;
   let e = null;
   let f = null;
+  let g = null;
+  let h = null;
   let proxy = null;
   try {
     a = await startServer({ dataDir: path.join(root, 'node-a'), uiPort: 0, tcpPort: 0, discovery: false, autoTrust: true, name: 'Node-A' });
@@ -334,6 +336,45 @@ async function main() {
     assert.equal(fs.readFileSync(path.join(receivedC, 'pair-note.txt'), 'utf8'), 'paired transfer ok\n');
     console.log('✓ 配对后单文件传输校验通过');
 
+    // 免验证码配对：双方确认一次即可
+    g = await startServer({ dataDir: path.join(root, 'node-g'), uiPort: 0, tcpPort: 0, discovery: false, autoTrust: false, name: 'Node-G' });
+    h = await startServer({ dataDir: path.join(root, 'node-h'), uiPort: 0, tcpPort: 0, discovery: false, autoTrust: false, name: 'Node-H' });
+    await postJson(`${g.url}/api/settings`, { requireCode: false });
+    const noCodeState = await snapshot(g);
+    assert.equal(noCodeState.settings.requireCode, false, '免验证码设置未生效');
+    const otherState = await snapshot(h);
+    assert.notEqual(otherState.settings.requireCode, false, '对端应保持验证码开启');
+
+    // 关闭的一方主动连开启的一方：应被拦截，请求不得到达对方
+    const blockedRes = await fetch(`${g.url}/api/connect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host: '127.0.0.1', port: h.manager.tcpPort })
+    });
+    assert.equal(blockedRes.status, 409, '发起方未开启验证时应被拦截');
+    const blockedBody = await blockedRes.json();
+    assert.equal(blockedBody.code, 'PAIR_CODE_REQUIRED');
+    const hAfterBlock = await snapshot(h);
+    assert.equal(hAfterBlock.pairRequests.length, 0, '配对被拦截时不应到达对方');
+    console.log('✓ 关闭方主动配对开启方被拦截');
+
+    await postJson(`${h.url}/api/connect`, { host: '127.0.0.1', port: g.manager.tcpPort });
+    const pairEntries = await waitFor('免验证码配对请求', async () => {
+      const sg = await snapshot(g);
+      const sh = await snapshot(h);
+      if (!sg.pairRequests.length || !sh.pairRequests.length) return null;
+      return { g: sg.pairRequests[0], h: sh.pairRequests[0] };
+    });
+    assert.equal(pairEntries.g.codeRequired, false, '免码方应标记为不需要验证码');
+    assert.equal(pairEntries.h.codeRequired, false, '对端也应标记为不需要验证码');
+    await postJson(`${g.url}/api/pair/${h.manager.identity.id}`, { accept: true });
+    await waitFor('免验证码配对完成', async () => {
+      const sh = await snapshot(h);
+      const peer = sh.peers.find((p) => p.id === g.manager.identity.id);
+      return peer && peer.trusted ? peer : null;
+    });
+    console.log('✓ 免验证码配对：一次确认完成');
+
     const finalState = await snapshot(a);
     assert.ok(finalState.device.discoveryPort > 0, '快照缺少发现端口');
     console.log('✓ 设置与状态快照接口正常');
@@ -343,7 +384,7 @@ async function main() {
     if (proxy) {
       try { await proxy.close(); } catch { /* noop */ }
     }
-    for (const app of [f, e, b, a, d, c]) {
+    for (const app of [h, g, f, e, b, a, d, c]) {
       if (!app) continue;
       try { await app.close(); } catch { /* noop */ }
     }

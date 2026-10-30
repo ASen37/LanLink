@@ -282,6 +282,11 @@
             <div class="panel-head"><h3 class="panel-title">网络</h3></div>
             <div class="panel-body">
               <label class="switch-row">
+                <div><strong>启用验证码校验（推荐）</strong><span>关闭后访客链接免码进入；局域网配对只需对方确认</span></div>
+                <input type="checkbox" id="set-require-code" class="switch">
+              </label>
+              <p class="faint" id="no-code-warning" hidden>⚠ 当前为免验证码模式：拿到访客链接即可上传/下载，同一局域网设备可发起配对。</p>
+              <label class="switch-row">
                 <div><strong>局域网自动发现</strong><span>通过 UDP 组播广播本机设备信息</span></div>
                 <input type="checkbox" id="set-discovery" class="switch">
               </label>

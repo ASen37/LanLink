@@ -244,7 +244,15 @@ async function startServer(opts = {}) {
       if (req.method === 'POST' && pathname === '/api/connect') {
         const body = await readBody(req);
         if (!body.host || !body.port) return sendJson(res, 400, { error: '需要 host 和 port' });
-        const result = await manager.dialManual(String(body.host), Number(body.port));
+        let result;
+        try {
+          result = await manager.dialManual(String(body.host), Number(body.port));
+        } catch (err) {
+          if (err.code === 'PAIR_CODE_REQUIRED') {
+            return sendJson(res, 409, { error: err.message, code: err.code, peer: err.peer || null });
+          }
+          throw err;
+        }
         return sendJson(res, 200, { peer: result.peer, sas: result.sas, trusted: result.trusted });
       }
       if (req.method === 'POST' && pathname === '/api/disconnect') {

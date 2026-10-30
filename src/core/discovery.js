@@ -6,11 +6,12 @@ const os = require('node:os');
 const GROUP = '239.255.42.99';
 
 class Discovery {
-  constructor({ identity, tcpPort, uiPort, port, onPeer, onLog }) {
+  constructor({ identity, tcpPort, uiPort, port, requireCode, onPeer, onLog }) {
     this.identity = identity;
     this.tcpPort = tcpPort;
     this.uiPort = uiPort || 0;
     this.port = port;
+    this.requireCode = requireCode !== false;
     this.onPeer = onPeer;
     this.onLog = onLog;
     this.socket = null;
@@ -47,9 +48,10 @@ class Discovery {
     }
   }
 
-  update({ tcpPort, uiPort }) {
+  update({ tcpPort, uiPort, requireCode }) {
     if (tcpPort) this.tcpPort = tcpPort;
     if (uiPort !== undefined) this.uiPort = uiPort;
+    if (requireCode !== undefined) this.requireCode = requireCode !== false;
     this.announce();
   }
 
@@ -62,6 +64,7 @@ class Discovery {
       fingerprint: this.identity.fingerprint,
       tcpPort: this.tcpPort,
       uiPort: this.uiPort,
+      requireCode: this.requireCode !== false,
       os: process.platform,
       host: os.hostname(),
       ts: Date.now()

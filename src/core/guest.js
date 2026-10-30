@@ -460,7 +460,9 @@ class GuestServer {
       return sendJson(res, 200, { ok: true }, { 'Set-Cookie': expire });
     }
 
-    const session = this.auth(req, token);
+    const expiresAt = this.settings.guestExpiresAt || 0;
+    const openAccess = this.settings.requireCode === false && (!expiresAt || Date.now() <= expiresAt);
+    const session = this.auth(req, token) || (openAccess ? { ip, open: true } : null);
     if (!session) {
       return sendJson(res, 401, { error: '请先输入访问码', auth: true });
     }
@@ -483,6 +485,7 @@ class GuestServer {
         expiresAt: this.settings.guestExpiresAt || 0,
         inboxLabel: INBOX_NAME,
         shareName: this.shareRoot() ? path.basename(this.shareRoot()) : '',
+        requireCode: this.settings.requireCode !== false,
         shareKind: this.shareKind(),
         serverTime: Date.now()
       });
@@ -733,7 +736,7 @@ class GuestServer {
 
     return readJson(req, 4096).then((body) => {
       const code = typeof body.code === 'string' ? body.code.trim() : '';
-      if (!/^\d{6}$/.test(code) || !safeEqual(code, this.settings.guestCode || '')) {
+      if (this.settings.requireCode !== false && (!/^\d{6}$/.test(code) || !safeEqual(code, this.settings.guestCode || ''))) {
         return sendJson(res, 403, { error: '访问码不正确' });
       }
       const expiresAt = this.settings.guestExpiresAt || 0;

@@ -307,6 +307,23 @@ async function main() {
     assert.equal(infoRes.status, 200, '新链接页面不可用');
     console.log('✓ 新链接仍可打开访客页');
 
+    // 免验证码模式：链接直接访问，恢复后重新校验
+    await post('/api/settings', { requireCode: false });
+    r = await guestFetch(newBase, '/api/info');
+    assert.equal(r.res.status, 200, '免码模式下 /api/info 应可直接访问');
+    assert.equal(r.data.requireCode, false);
+    const openBatch = await guestFetch(newBase, '/api/batches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label: 'open', files: [{ path: 'open.txt', size: 1, mtimeMs: Date.now() }] })
+    });
+    assert.equal(openBatch.res.status, 200, JSON.stringify(openBatch.data));
+    await guestFetch(newBase, `/api/batches/${openBatch.data.batch.id}/cancel`, { method: 'POST' });
+    await post('/api/settings', { requireCode: true });
+    r = await guestFetch(newBase, '/api/info');
+    assert.equal(r.res.status, 401, '恢复验证码后应重新要求登录');
+    console.log('✓ 免验证码模式：链接直接访问，恢复后重新校验');
+
     const disabled = await post('/api/settings', { guestEnabled: false });
     assert.equal(disabled.res.status, 200);
     state = await (await fetch(`${host}/api/state`)).json();

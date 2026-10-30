@@ -40,6 +40,7 @@ const toastsRoot = $('#toasts');
 let state = null;
 let view = 'devices';
 let settingsDirty = false;
+let requireCodePending = false;
 let currentModal = null;
 let pickerResolve = null;
 let confirmResolve = null;
@@ -447,6 +448,10 @@ function renderSettings() {
   if (document.activeElement !== nameInput) nameInput.value = s.deviceName || '';
   $('#set-download').value = s.downloadDir || '';
   $('#set-auto-accept').checked = Boolean(s.autoAccept);
+  if (!requireCodePending) {
+    $('#set-require-code').checked = s.requireCode !== false;
+    $('#no-code-warning').hidden = s.requireCode !== false;
+  }
   $('#set-archive').checked = Boolean(s.archiveEnabled);
   if (document.activeElement !== $('#set-ttl')) $('#set-ttl').value = String(s.partialTtlHours ?? 24);
   $('#set-discovery').checked = Boolean(s.discoveryEnabled);
@@ -659,19 +664,38 @@ function syncModals() {
 function showPairModal(req) {
   const incoming = req.initiated === false;
   const name = req.peer && req.peer.name ? req.peer.name : '对方设备';
-  const code = String(req.sas || '------');
-  const digits = code.split('').map((d) => `<span>${esc(d)}</span>`).join('');
-  const html = `
-    <h3>${incoming ? '配对请求' : '等待对方确认'}</h3>
-    <p>${incoming
-      ? `${esc(name)} 请求与本机配对。请确认两台电脑上显示相同的验证码：`
-      : `已向 ${esc(name)} 发起配对。请让对方核对下面的验证码：`}</p>
-    <div class="pair-code">${digits}</div>
-    <div class="modal-note">验证码由双方临时密钥与身份密钥共同派生。若两边不一致，请拒绝并检查网络是否被劫持。</div>
-    <div class="modal-actions">
-      <button class="nes-btn" data-action="pair-decline" data-id="${esc(req.sessionId)}">${incoming ? '拒绝' : '取消配对'}</button>
-      ${incoming ? `<button class="nes-btn is-primary" data-action="pair-accept" data-id="${esc(req.sessionId)}">验证码一致，接受</button>` : ''}
-    </div>`;
+  const host = req.peer && req.peer.host ? `（${esc(req.peer.host)}）` : '';
+  const noCode = req.codeRequired === false
+    || (Boolean(state.settings) && state.settings.requireCode === false);
+  let html;
+  if (noCode) {
+    html = `
+      <h3>${incoming ? '配对请求' : '等待对方确认'}</h3>
+      <p>${incoming
+        ? `${esc(name)}${host} 请求与本机配对。`
+        : `已向 ${esc(name)}${host} 发起配对，等待对方确认。`}</p>
+      <div class="modal-note">${incoming
+        ? '当前为免验证码模式：请确认这是你认识的设备，接受后该设备身份会被记住。'
+        : '当前为免验证码模式：对方确认后即可完成配对。'}</div>
+      <div class="modal-actions">
+        <button class="nes-btn" data-action="pair-decline" data-id="${esc(req.sessionId)}">${incoming ? '拒绝' : '取消配对'}</button>
+        ${incoming ? `<button class="nes-btn is-primary" data-action="pair-accept" data-id="${esc(req.sessionId)}">允许配对</button>` : ''}
+      </div>`;
+  } else {
+    const code = String(req.sas || '------');
+    const digits = code.split('').map((d) => `<span>${esc(d)}</span>`).join('');
+    html = `
+      <h3>${incoming ? '配对请求' : '等待对方确认'}</h3>
+      <p>${incoming
+        ? `${esc(name)} 请求与本机配对。请确认两台电脑上显示相同的验证码：`
+        : `已向 ${esc(name)} 发起配对。请让对方核对下面的验证码：`}</p>
+      <div class="pair-code">${digits}</div>
+      <div class="modal-note">验证码由双方临时密钥与身份密钥共同派生。若两边不一致，请拒绝并检查网络是否被劫持。</div>
+      <div class="modal-actions">
+        <button class="nes-btn" data-action="pair-decline" data-id="${esc(req.sessionId)}">${incoming ? '拒绝' : '取消配对'}</button>
+        ${incoming ? `<button class="nes-btn is-primary" data-action="pair-accept" data-id="${esc(req.sessionId)}">验证码一致，接受</button>` : ''}
+      </div>`;
+  }
   openModal('pair', `${req.sessionId}:${incoming ? 'in' : 'out'}`, html);
 }
 
@@ -910,15 +934,45 @@ async function pickOfferDest() {
   if (offer) showOfferModal(offer, dir || current);
 }
 
-async function pairPeer(peerId) {
+async function enableCodeAndPair(peer) {
+  const ok = await confirmDialog(
+    `“${peer.name}”已开启配对验证。要继续配对，本机也需要开启验证码校验。`,
+    { title: '需要开启验证码', okText: '开启并继续' }
+  );
+  if (!ok) return false;
+  try {
+    await api('/api/settings', { requireCode: true });
+    if (state && state.settings) state.settings.requireCode = true;
+    return true;
+  } catch (err) {
+    toast(err.message, 'error');
+    return false;
+  }
+}
+
+async function pairPeer(peerId, { skipCheck = false } = {}) {
   const peer = state ? state.peers.find((p) => p.id === peerId) : null;
   if (!peer) { toast('设备已离线', 'warning'); return; }
   if (!peer.host || !peer.tcpPort) { openManualModal(peer.host || ''); return; }
+  if (!skipCheck && state && state.settings && state.settings.requireCode === false && peer.requireCode !== false) {
+    if (await enableCodeAndPair(peer)) await pairPeer(peerId, { skipCheck: true });
+    return;
+  }
   try {
     const result = await api('/api/connect', { host: peer.host, port: peer.tcpPort });
-    if (peer.trusted) toast(`已重新连接 ${peer.name}`, 'success');
-    else toast(`正在与 ${result.peer.name} 配对，请核对验证码`, 'info');
+    if (peer.trusted) {
+      toast(`已重新连接 ${peer.name}`, 'success');
+      return;
+    }
+    const noCode = (state && state.settings && state.settings.requireCode === false) || peer.requireCode === false;
+    toast(noCode
+      ? `正在与 ${result.peer.name} 配对，请等待对方确认`
+      : `正在与 ${result.peer.name} 配对，请核对验证码`, 'info');
   } catch (err) {
+    if (err.data && err.data.code === 'PAIR_CODE_REQUIRED') {
+      if (await enableCodeAndPair(peer)) await pairPeer(peerId, { skipCheck: true });
+      return;
+    }
     toast(err.message, 'error');
   }
 }
@@ -1115,6 +1169,7 @@ async function saveSettings() {
       deviceName: name,
       downloadDir: $('#set-download').value.trim(),
       autoAccept: $('#set-auto-accept').checked,
+      requireCode: $('#set-require-code').checked,
       archiveEnabled: $('#set-archive').checked,
       discoveryEnabled: $('#set-discovery').checked,
       partialTtlHours: Number.isFinite(ttl) ? ttl : 24,
@@ -1219,6 +1274,33 @@ function bindEvents() {
   $('#pick-guest-share-dir').addEventListener('click', () => pickGuestShare('dir').catch((err) => toast(err.message, 'error')));
   $('#pick-guest-share-file').addEventListener('click', () => pickGuestShare('file').catch((err) => toast(err.message, 'error')));
   // 两个访客开关即时生效，并同步到设备页的访客卡片
+  $('#set-require-code').addEventListener('change', async (event) => {
+    const box = event.target;
+    const next = box.checked;
+    if (!next) {
+      const ok = await confirmDialog(
+        '关闭验证码后：\n\n· 任何拿到访客链接的人都能直接上传/下载\n· 同一局域网内的设备可以发起配对，只需你点确认\n\n仅建议在完全可信的家庭或办公室网络中使用。',
+        { title: '关闭验证码校验', okText: '仍然关闭' }
+      );
+      if (!ok) {
+        box.checked = true;
+        return;
+      }
+    }
+    // 弹窗期间可能有状态推送把开关改回旧值，这里以点击时的意图为准
+    requireCodePending = true;
+    box.checked = next;
+    try {
+      await api('/api/settings', { requireCode: next });
+      $('#no-code-warning').hidden = next;
+    } catch (err) {
+      box.checked = !next;
+      toast(err.message, 'error');
+    } finally {
+      requireCodePending = false;
+    }
+  });
+
   $('#set-guest-enabled').addEventListener('change', async (event) => {
     const checked = event.target.checked;
     try {

@@ -162,6 +162,9 @@
     const downloadTab = $('#mode-download');
     if (downloadTab) downloadTab.hidden = !state.shareName;
     $('#share-host').textContent = state.deviceName;
+    document.querySelectorAll('.no-code-badge').forEach((el) => {
+      el.hidden = info.requireCode !== false;
+    });
     if (state.shareName) $('#share-badge').textContent = state.shareName;
     showView('upload');
   }

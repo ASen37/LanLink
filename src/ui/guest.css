@@ -411,3 +411,5 @@ body {
 .share-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .share-size { color: var(--ink-3); font-size: 11px; }
 .file-row .share-dl { flex: 0 0 auto; padding: 4px 10px; }
+
+.tag.warn { background: #f7d51d; color: #000; }

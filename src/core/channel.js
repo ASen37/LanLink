@@ -104,7 +104,8 @@ async function handshake(socket, identity, isClient, info = {}) {
     nonce: crypto.randomBytes(16).toString('base64url'),
     os: process.platform,
     tcpPort: Number(info.tcpPort) || 0,
-    uiPort: Number(info.uiPort) || 0
+    uiPort: Number(info.uiPort) || 0,
+    requireCode: info.requireCode !== false
   };
 
   let clientHello;
@@ -175,7 +176,8 @@ async function handshake(socket, identity, isClient, info = {}) {
         fingerprint: crypto.createHash('sha256').update(peerPubRaw).digest('hex'),
         os: (serverHello === hello ? clientHello.os : serverHello.os) || 'unknown',
         tcpPort: Number((serverHello === hello ? clientHello.tcpPort : serverHello.tcpPort)) || 0,
-        uiPort: Number((serverHello === hello ? clientHello.uiPort : serverHello.uiPort)) || 0
+        uiPort: Number((serverHello === hello ? clientHello.uiPort : serverHello.uiPort)) || 0,
+        requireCode: ((serverHello === hello ? clientHello : serverHello).requireCode) !== false
       },
       sendKey: isClient ? keys.c2s : keys.s2c,
       recvKey: isClient ? keys.s2c : keys.c2s

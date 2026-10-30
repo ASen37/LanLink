@@ -156,6 +156,9 @@ async function main() {
   let f = null;
   let g = null;
   let h = null;
+  let i = null;
+  let j = null;
+  let k = null;
   let proxy = null;
   try {
     a = await startServer({ dataDir: path.join(root, 'node-a'), uiPort: 0, tcpPort: 0, discovery: false, autoTrust: true, name: 'Node-A' });
@@ -375,6 +378,42 @@ async function main() {
     });
     console.log('✓ 免验证码配对：一次确认完成');
 
+    // 并发同名文件：两台设备同时发给同一接收方
+    i = await startServer({ dataDir: path.join(root, 'node-i'), uiPort: 0, tcpPort: 0, discovery: false, autoTrust: true, name: 'Node-I' });
+    j = await startServer({ dataDir: path.join(root, 'node-j'), uiPort: 0, tcpPort: 0, discovery: false, autoTrust: true, name: 'Node-J' });
+    k = await startServer({ dataDir: path.join(root, 'node-k'), uiPort: 0, tcpPort: 0, discovery: false, autoTrust: true, name: 'Node-K' });
+    const recvI = path.join(root, 'recv-i');
+    await postJson(`${i.url}/api/settings`, { downloadDir: recvI, autoAccept: true, archiveEnabled: false });
+    await postJson(`${j.url}/api/connect`, { host: '127.0.0.1', port: i.manager.tcpPort });
+    await postJson(`${k.url}/api/connect`, { host: '127.0.0.1', port: i.manager.tcpPort });
+    const srcJ = path.join(root, 'src-j', 'same.txt');
+    const srcK = path.join(root, 'src-k', 'same.txt');
+    await fsp.mkdir(path.dirname(srcJ), { recursive: true });
+    await fsp.mkdir(path.dirname(srcK), { recursive: true });
+    await fsp.writeFile(srcJ, 'from-j');
+    await fsp.writeFile(srcK, 'from-k');
+    const sj = await snapshot(j);
+    const sk = await snapshot(k);
+    const peerJI = sj.peers.find((p) => p.id === i.manager.identity.id);
+    const peerKI = sk.peers.find((p) => p.id === i.manager.identity.id);
+    assert.ok(peerJI && peerKI, '发送方缺少接收方设备');
+    await Promise.all([
+      postJson(`${j.url}/api/send`, { peerId: peerJI.id, paths: [srcJ] }),
+      postJson(`${k.url}/api/send`, { peerId: peerKI.id, paths: [srcK] })
+    ]);
+    await waitFor('并发同名传输完成', async () => {
+      const si = await snapshot(i);
+      const done = si.history.filter((h) => h.direction === 'in' && h.status === 'completed');
+      return done.length >= 2 ? done : null;
+    });
+    const received = (await fsp.readdir(recvI)).filter((name) => name.endsWith('.txt'));
+    const contents = [];
+    for (const name of received) contents.push(await fsp.readFile(path.join(recvI, name), 'utf8'));
+    assert.equal(received.length, 2, `应保存两个文件，实际：${received.join(', ')}`);
+    assert.ok(received.some((name) => /\(2\)/.test(name)), '未生成带序号的冲突文件名');
+    assert.deepEqual(contents.sort(), ['from-j', 'from-k'], '并发同名文件内容不完整');
+    console.log('✓ 并发同名文件：自动改名且内容完整');
+
     const finalState = await snapshot(a);
     assert.ok(finalState.device.discoveryPort > 0, '快照缺少发现端口');
     console.log('✓ 设置与状态快照接口正常');
@@ -384,7 +423,7 @@ async function main() {
     if (proxy) {
       try { await proxy.close(); } catch { /* noop */ }
     }
-    for (const app of [h, g, f, e, b, a, d, c]) {
+    for (const app of [k, j, i, h, g, f, e, b, a, d, c]) {
       if (!app) continue;
       try { await app.close(); } catch { /* noop */ }
     }

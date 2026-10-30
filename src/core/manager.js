@@ -13,6 +13,7 @@ const { connect, accept } = require('./channel');
 const { Discovery } = require('./discovery');
 const { TransferSender, TransferReceiver } = require('./transfer');
 const { GuestServer, INBOX_NAME } = require('./guest');
+const { DestinationRegistry } = require('./destination');
 const { randHex } = require('./util');
 
 const ACTIVE = new Set(['preparing', 'pairing', 'waiting', 'transferring', 'finishing', 'starting']);
@@ -60,6 +61,7 @@ class Manager extends EventEmitter {
     this.transfers = new Map();
     this.offers = new Map();
     this.pairRequests = new Map();
+    this.destinations = new DestinationRegistry();
     this.pendingOut = new Map();
     this.history = [];
     this.tcpServer = null;
@@ -943,6 +945,7 @@ class Manager extends EventEmitter {
     t.status = status;
     t.error = error || null;
     t.endedAt = Date.now();
+    this.destinations.releaseOwner(t.id);
     t.speed = 0;
     t.eta = 0;
     if (t.session) {

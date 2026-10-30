@@ -395,19 +395,27 @@ class TransferReceiver {
     if (this.canceled) return;
     const item = this.offer.items[i];
     if (!item) return;
-    const finalPath = safeJoin(this.destDir, item.path);
+    const claim = await this.manager.destinations.claim(this.destDir, item.path, this.transfer.id);
+    const finalPath = claim.finalPath;
+    const ownerTag = String(this.transfer.peer && this.transfer.peer.id ? this.transfer.peer.id : 'unknown').slice(0, 8);
     await this.ensureDir(path.dirname(finalPath));
     this.current = {
       i,
       item,
       finalPath,
-      partPath: finalPath + '.lanlink-part',
-      sidecarPath: finalPath + '.lanlink-part.json',
+      claimKey: claim.key,
+      partPath: `${finalPath}.${ownerTag}.lanlink-part`,
+      sidecarPath: `${finalPath}.${ownerTag}.lanlink-part.json`,
       done: new Set(),
       fh: null,
       baseBytes: 0,
       existing: null
     };
+    if (claim.renamed) {
+      item.path = path.relative(this.destDir, finalPath).split(path.sep).join('/');
+      if (this.offer.totalFiles === 1) this.transfer.rootLabel = path.basename(finalPath);
+      this.manager.toast(`检测到同名文件，已保存为 ${path.basename(finalPath)}`, 'info');
+    }
     const t = this.transfer;
     t.currentFile = item.path;
     this.manager.emitState();
@@ -430,6 +438,18 @@ class TransferReceiver {
         } catch { /* fall through to transfer */ }
       }
       this.current.existing = true;
+    }
+
+    // 兼容旧版本固定后缀的断点文件
+    if (!(await pathExists(this.current.sidecarPath))) {
+      const legacyPart = `${finalPath}.lanlink-part`;
+      const legacySide = `${legacyPart}.json`;
+      if (await pathExists(legacyPart) && await pathExists(legacySide)) {
+        try {
+          await fsp.rename(legacyPart, this.current.partPath);
+          await fsp.rename(legacySide, this.current.sidecarPath);
+        } catch { /* 迁移失败则按新任务处理 */ }
+      }
     }
 
     let done = new Set();
@@ -493,6 +513,7 @@ class TransferReceiver {
     t.bytes += cur.item.size;
     t.filesDone += 1;
     await this.channel.send({ t: 'file_done', i: cur.i, skipped: true, path: cur.finalPath });
+    if (cur.claimKey) this.manager.destinations.releasePath(cur.claimKey, this.transfer.id);
     this.current = null;
     await this.maybeFinish();
   }
@@ -597,19 +618,22 @@ class TransferReceiver {
     cur.fh = null;
 
     let archived = null;
-    if (await pathExists(cur.finalPath)) {
-      archived = await archiveExisting(this.destDir, cur.finalPath, cur.item.path, this.settings.archiveEnabled !== false);
-    }
-    try {
-      await fsp.rename(cur.partPath, cur.finalPath);
-    } catch (err) {
+    await this.manager.destinations.withPathLock(cur.claimKey, async () => {
       if (await pathExists(cur.finalPath)) {
-        await archiveExisting(this.destDir, cur.finalPath, cur.item.path, this.settings.archiveEnabled !== false);
-        await fsp.rename(cur.partPath, cur.finalPath);
-      } else {
-        throw err;
+        archived = await archiveExisting(this.destDir, cur.finalPath, cur.item.path, this.settings.archiveEnabled !== false);
       }
-    }
+      try {
+        await fsp.rename(cur.partPath, cur.finalPath);
+      } catch (err) {
+        if (await pathExists(cur.finalPath)) {
+          await archiveExisting(this.destDir, cur.finalPath, cur.item.path, this.settings.archiveEnabled !== false);
+          await fsp.rename(cur.partPath, cur.finalPath);
+        } else {
+          throw err;
+        }
+      }
+    });
+    if (cur.claimKey) this.manager.destinations.releasePath(cur.claimKey, this.transfer.id);
     if (cur.hasSidecar) await fsp.rm(cur.sidecarPath, { force: true });
     this.transfer.filesDone += 1;
     await this.channel.send({ t: 'file_done', i: cur.i, path: cur.finalPath, archived: archived ? archived.type : null });
